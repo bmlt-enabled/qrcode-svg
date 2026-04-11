@@ -2,13 +2,13 @@
 
 ## Supported Versions
 
-Only the latest published version of `@pjaudiomv/qrcode-svg` receives security fixes.
+Only the latest published version of `@bmlt-enabled/qrcode-svg` receives security fixes.
 
 ## Reporting a Vulnerability
 
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
-Report vulnerabilities by opening a [GitHub Security Advisory](https://github.com/pjaudiomv/qrcode-svg/security/advisories/new) on this repository. Include as much detail as possible:
+Report vulnerabilities by opening a [GitHub Security Advisory](https://github.com/bmlt-enabled/qrcode-svg/security/advisories/new) on this repository. Include as much detail as possible:
 
 - Description of the vulnerability
 - Steps to reproduce

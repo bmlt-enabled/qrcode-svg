@@ -22,7 +22,7 @@ Examples of unacceptable behavior:
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by opening a [GitHub Security Advisory](https://github.com/pjaudiomv/qrcode-svg/security/advisories/new) to contact the maintainer privately. All complaints will be reviewed and investigated and will result in a response deemed necessary and appropriate to the circumstances.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by opening a [GitHub Security Advisory](https://github.com/bmlt-enabled/qrcode-svg/security/advisories/new) to contact the maintainer privately. All complaints will be reviewed and investigated and will result in a response deemed necessary and appropriate to the circumstances.
 
 ## Attribution
 

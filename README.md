@@ -11,13 +11,13 @@ An ES module for generating SVG QR codes in pure JavaScript. Works in the browse
 Install the package:
 
 ```bash
-npm install @pjaudiomv/qrcode-svg
+npm install @bmlt-enabled/qrcode-svg
 ```
 
 Inline example:
 
 ```javascript
-import QRCode from '@pjaudiomv/qrcode-svg'
+import QRCode from '@bmlt-enabled/qrcode-svg'
 
 const svg = new QRCode('Hello World!').svg()
 ```
@@ -153,25 +153,25 @@ Output with `defs` and `use` elements
 ```html
 <!DOCTYPE html>
 <html>
-<body>
-<div id="container"></div>
-<script type="module">
-    import QRCode from 'https://cdn.jsdelivr.net/npm/@pjaudiomv/qrcode-svg/dist/qrcode.js'
-    const qrcode = new QRCode({
-        content: 'Hello World!',
-        container: 'svg-viewbox',
-        join: true,
-    })
-    document.getElementById('container').innerHTML = qrcode.svg()
-</script>
-</body>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import QRCode from 'https://cdn.jsdelivr.net/npm/@bmlt-enabled/qrcode-svg/dist/qrcode.js'
+            const qrcode = new QRCode({
+                content: 'Hello World!',
+                container: 'svg-viewbox',
+                join: true,
+            })
+            document.getElementById('container').innerHTML = qrcode.svg()
+        </script>
+    </body>
 </html>
 ```
 
 When using a bundler (Vite, Webpack, etc.), you can use the bare specifier instead:
 
 ```javascript
-import QRCode from '@pjaudiomv/qrcode-svg'
+import QRCode from '@bmlt-enabled/qrcode-svg'
 ```
 
 ## Credits & lineage
@@ -180,7 +180,7 @@ This package is a modernized (ESM-only, browser and Node.js, Vite-built, typed) 
 
 - Originally created by [papnkukn/qrcode-svg](https://github.com/papnkukn/qrcode-svg).
 - Forked and deobfuscated by [leMaik/qrcode-svg](https://github.com/leMaik/qrcode-svg/)
-- This fork (`@pjaudiomv/qrcode-svg`) drops the Node CLI, `save()`/`fs` usage, and the ASCII helper; converts to ESM; adds Vite + Vitest + TypeScript declarations.
+- This fork (`@bmlt-enabled/qrcode-svg`) drops the Node CLI, `save()`/`fs` usage, and the ASCII helper; converts to ESM; adds Vite + Vitest + TypeScript declarations.
 
 Thanks to [davidshimjs](https://github.com/davidshimjs/qrcodejs) for the base library, and to [Kazuhiko Arase](http://www.d-project.com/) for the original QR Code in JavaScript algorithm.
 

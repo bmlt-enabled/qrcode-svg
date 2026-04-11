@@ -10,7 +10,7 @@ Thanks for taking the time to contribute!
 ## Setup
 
 ```bash
-git clone https://github.com/pjaudiomv/qrcode-svg.git
+git clone https://github.com/bmlt-enabled/qrcode-svg.git
 cd qrcode-svg
 npm install
 ```
@@ -36,7 +36,7 @@ Source lives in `src/qrcode.js` (ESM). Tests live in `test/`. The build output i
 
 ## Publishing (maintainers)
 
-Releases are published to npm under `@pjaudiomv/qrcode-svg`.
+Releases are published to npm under `@bmlt-enabled/qrcode-svg`.
 
 1. Make sure `main` / `fork` is clean and all checks pass:
 
@@ -66,7 +66,7 @@ Releases are published to npm under `@pjaudiomv/qrcode-svg`.
     npm publish --access public
     ```
 
-    > **Note:** Because this is a scoped package (`@pjaudiomv/...`), npm defaults to a **private** publish and will fail unless you pass `--access public` (or have `publishConfig.access: "public"` set in `package.json`). Always include the flag on the first publish of a new scoped package.
+    > **Note:** Because this is a scoped package (`@bmlt-enabled/...`), npm defaults to a **private** publish and will fail unless you pass `--access public` (or have `publishConfig.access: "public"` set in `package.json`). Always include the flag on the first publish of a new scoped package.
 
 5. Push the commit and tag:
 

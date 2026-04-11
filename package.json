@@ -1,8 +1,8 @@
 {
-    "name": "@pjaudiomv/qrcode-svg",
-    "version": "1.0.4",
+    "name": "@bmlt-enabled/qrcode-svg",
+    "version": "1.0.0",
     "description": "A simple QR Code generator in pure JavaScript (browser and Node.js, ESM)",
-    "author": "pjaudiomv",
+    "author": "bmlt-enabled",
     "license": "MIT",
     "type": "module",
     "types": "./dist/qrcode.d.ts",
@@ -39,12 +39,12 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/pjaudiomv/qrcode-svg.git"
+        "url": "git+https://github.com/bmlt-enabled/qrcode-svg.git"
     },
     "bugs": {
-        "url": "https://github.com/pjaudiomv/qrcode-svg/issues"
+        "url": "https://github.com/bmlt-enabled/qrcode-svg/issues"
     },
-    "homepage": "https://github.com/pjaudiomv/qrcode-svg",
+    "homepage": "https://github.com/bmlt-enabled/qrcode-svg",
     "engines": {
         "node": ">=22"
     },
