@@ -189,3 +189,4 @@ Thanks to [davidshimjs](https://github.com/davidshimjs/qrcodejs) for the base li
 Licensed under the [MIT license](https://opensource.org/license/mit).
 
 The word "QR Code" is a registered trademark of [DENSO WAVE INCORPORATED](https://www.qrcode.com/en/patent.html).
+
