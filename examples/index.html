@@ -1,15 +1,926 @@
 <!doctype html>
-<html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>BMLT — QR Code Playground</title>
+        <link rel="icon" type="image/png" href="./bmlt.png" />
+        <style>
+            :root {
+                --primary-50: #e6f2ff;
+                --primary-100: #cce5ff;
+                --primary-400: #3399ff;
+                --primary-500: #0080ff;
+                --primary-600: #0066b3;
+                --primary-700: #0052a3;
+                --primary-800: #003d7a;
+
+                --bg-grad-from: #0066b3;
+                --bg-grad-to: #0052a3;
+
+                --gray-50: #f9fafb;
+                --gray-100: #f3f4f6;
+                --gray-200: #e5e7eb;
+                --gray-300: #d1d5db;
+                --gray-400: #9ca3af;
+                --gray-500: #6b7280;
+                --gray-600: #4b5563;
+                --gray-700: #374151;
+                --gray-800: #1f2937;
+                --gray-900: #111827;
+
+                --card-bg: #ffffff;
+                --card-fg: var(--gray-900);
+                --section-bg: var(--gray-50);
+                --border: var(--gray-200);
+                --muted: var(--gray-500);
+
+                --radius: 12px;
+                --shadow:
+                    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                    0 10px 20px -5px rgba(0, 0, 0, 0.1);
+
+                --red-600: #dc2626;
+            }
+
+            .dark {
+                --bg-grad-from: #111827;
+                --bg-grad-to: #1f2937;
+                --card-bg: #111827;
+                --card-fg: #f3f4f6;
+                --section-bg: #1f2937;
+                --border: #374151;
+                --muted: #9ca3af;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                font-family:
+                    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+                    'Helvetica Neue', Arial, sans-serif;
+                font-size: 14px;
+                color: var(--card-fg);
+                -webkit-font-smoothing: antialiased;
+            }
+
+            body {
+                min-height: 100vh;
+                background: linear-gradient(
+                    135deg,
+                    var(--bg-grad-from) 0%,
+                    var(--bg-grad-to) 100%
+                );
+                padding: 24px;
+            }
+
+            .wrap {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .card {
+                background: var(--card-bg);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                overflow: hidden;
+            }
+
+            /* header */
+            .header {
+                background: var(--card-bg);
+                border-bottom: 1px solid var(--border);
+                padding: 20px 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            @media (min-width: 640px) {
+                .header {
+                    padding: 24px 32px;
+                }
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
+            .brand img {
+                width: 44px;
+                height: 44px;
+                border-radius: 8px;
+            }
+            .brand h1 {
+                margin: 0 0 2px;
+                font-size: 22px;
+                font-weight: 700;
+                line-height: 1.2;
+            }
+            @media (min-width: 640px) {
+                .brand h1 {
+                    font-size: 26px;
+                }
+            }
+            .brand p {
+                margin: 0;
+                font-size: 13px;
+                color: var(--muted);
+            }
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .icon-btn {
+                background: transparent;
+                border: 0;
+                width: 38px;
+                height: 38px;
+                border-radius: 8px;
+                color: var(--gray-500);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background 0.15s ease,
+                    color 0.15s ease;
+                text-decoration: none;
+            }
+            .icon-btn:hover {
+                background: var(--gray-100);
+                color: var(--card-fg);
+            }
+            .dark .icon-btn:hover {
+                background: var(--gray-700);
+            }
+            .icon-btn svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            /* stats */
+            .stats {
+                background: var(--section-bg);
+                border-bottom: 1px solid var(--border);
+                padding: 20px;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px;
+            }
+            @media (min-width: 640px) {
+                .stats {
+                    padding: 32px;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 16px;
+                }
+            }
+            .stat {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 20px 16px;
+                text-align: center;
+            }
+            .stat .label {
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .stat .value {
+                margin-top: 8px;
+                font-size: 26px;
+                font-weight: 700;
+                color: var(--primary-600);
+                line-height: 1.1;
+            }
+            .dark .stat .value {
+                color: var(--primary-400);
+            }
+
+            /* body */
+            .body {
+                background: var(--card-bg);
+                padding: 24px;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+            @media (min-width: 900px) {
+                .body {
+                    padding: 32px;
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+                    gap: 40px;
+                }
+            }
+
+            /* form */
+            .form {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+            .form h2 {
+                margin: 0 0 4px;
+                font-size: 16px;
+                font-weight: 600;
+            }
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .field label {
+                font-size: 13px;
+                font-weight: 500;
+            }
+            .field .hint {
+                font-size: 12px;
+                color: var(--muted);
+            }
+            .input,
+            .textarea,
+            .select {
+                width: 100%;
+                background: var(--card-bg);
+                border: 1px solid var(--gray-300);
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 14px;
+                color: var(--card-fg);
+                font-family: inherit;
+                transition:
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease;
+            }
+            .dark .input,
+            .dark .textarea,
+            .dark .select {
+                border-color: var(--gray-600);
+                background: var(--gray-800);
+            }
+            .input:focus,
+            .textarea:focus,
+            .select:focus {
+                outline: none;
+                border-color: var(--primary-500);
+                box-shadow: 0 0 0 3px rgba(0, 128, 255, 0.15);
+            }
+            .textarea {
+                min-height: 90px;
+                resize: vertical;
+            }
+            .select {
+                appearance: none;
+                background-image: linear-gradient(
+                        45deg,
+                        transparent 50%,
+                        currentColor 50%
+                    ),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+                background-position:
+                    calc(100% - 16px) 50%,
+                    calc(100% - 11px) 50%;
+                background-size:
+                    5px 5px,
+                    5px 5px;
+                background-repeat: no-repeat;
+                padding-right: 32px;
+                cursor: pointer;
+            }
+
+            .row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            .color-field {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border: 1px solid var(--gray-300);
+                border-radius: 8px;
+                padding: 6px 10px;
+                background: var(--card-bg);
+                cursor: pointer;
+                position: relative;
+                transition: border-color 0.15s ease;
+            }
+            .dark .color-field {
+                border-color: var(--gray-600);
+                background: var(--gray-800);
+            }
+            .color-field:hover {
+                border-color: var(--primary-500);
+            }
+            .color-field input[type='color'] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+            .color-field .chip {
+                width: 26px;
+                height: 26px;
+                border-radius: 6px;
+                border: 1px solid var(--gray-300);
+                flex-shrink: 0;
+            }
+            .dark .color-field .chip {
+                border-color: var(--gray-600);
+            }
+            .color-field .hex {
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 13px;
+            }
+
+            /* preview */
+            .preview-col {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .preview-card {
+                background: var(--section-bg);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                aspect-ratio: 1 / 1;
+                position: relative;
+            }
+            .preview-card::before {
+                content: '';
+                position: absolute;
+                inset: 12px;
+                border: 1px dashed var(--border);
+                border-radius: 8px;
+                pointer-events: none;
+            }
+            #container {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                z-index: 1;
+            }
+            #container svg {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+                display: block;
+                border-radius: 4px;
+                animation: pop 0.2s ease;
+            }
+            @keyframes pop {
+                from {
+                    opacity: 0;
+                    transform: scale(0.96);
+                }
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+
+            .meta-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 10px 14px;
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                font-size: 12px;
+                color: var(--muted);
+                flex-wrap: wrap;
+            }
+            .meta-row b {
+                color: var(--card-fg);
+                font-weight: 600;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            }
+
+            /* buttons */
+            .actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 11px 18px;
+                font-size: 14px;
+                font-weight: 600;
+                border-radius: 8px;
+                cursor: pointer;
+                border: 1px solid transparent;
+                font-family: inherit;
+                transition:
+                    background 0.15s ease,
+                    border-color 0.15s ease,
+                    color 0.15s ease,
+                    transform 0.05s ease;
+            }
+            .btn:active {
+                transform: translateY(1px);
+            }
+            .btn-primary {
+                background: var(--primary-600);
+                color: #fff;
+            }
+            .btn-primary:hover {
+                background: var(--primary-700);
+            }
+            .dark .btn-primary {
+                background: var(--primary-700);
+            }
+            .dark .btn-primary:hover {
+                background: var(--primary-600);
+            }
+            .btn-secondary {
+                background: var(--card-bg);
+                color: var(--card-fg);
+                border-color: var(--gray-300);
+            }
+            .btn-secondary:hover {
+                background: var(--gray-50);
+                border-color: var(--primary-500);
+            }
+            .dark .btn-secondary {
+                border-color: var(--gray-600);
+                background: var(--gray-800);
+            }
+            .dark .btn-secondary:hover {
+                background: var(--gray-700);
+            }
+            .btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .alert {
+                padding: 10px 14px;
+                background: #fef2f2;
+                color: var(--red-600);
+                border: 1px solid #fecaca;
+                border-radius: 8px;
+                font-size: 13px;
+                display: none;
+            }
+            .alert.show {
+                display: block;
+            }
+            .dark .alert {
+                background: rgba(239, 68, 68, 0.12);
+                border-color: rgba(239, 68, 68, 0.3);
+                color: #fca5a5;
+            }
+
+            .footer {
+                text-align: center;
+                padding: 18px 24px;
+                font-size: 12px;
+                color: var(--muted);
+                border-top: 1px solid var(--border);
+                background: var(--card-bg);
+            }
+            .footer a {
+                color: var(--primary-600);
+                text-decoration: none;
+                font-weight: 500;
+            }
+            .footer a:hover {
+                text-decoration: underline;
+            }
+            .dark .footer a {
+                color: var(--primary-400);
+            }
+        </style>
+        <script>
+            ;(function () {
+                try {
+                    const stored = localStorage.getItem('color-theme')
+                    const prefersDark =
+                        window.matchMedia &&
+                        window.matchMedia('(prefers-color-scheme: dark)')
+                            .matches
+                    if (stored === 'dark' || (!stored && prefersDark)) {
+                        document.documentElement.classList.add('dark')
+                    }
+                } catch (e) {}
+            })()
+        </script>
+    </head>
     <body>
-        <div id="container" style="width: 600px"></div>
+        <div class="wrap">
+            <div class="card">
+                <div class="header">
+                    <div class="brand">
+                        <img src="./bmlt.png" alt="BMLT" />
+                        <div>
+                            <h1>QR Code Playground</h1>
+                            <p>
+                                Generate SVG QR codes — live preview, PNG &amp;
+                                SVG export
+                            </p>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button
+                            class="icon-btn"
+                            id="theme-toggle"
+                            title="Toggle dark mode"
+                            type="button"
+                            aria-label="Toggle dark mode"
+                        >
+                            <svg
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <circle cx="12" cy="12" r="4" />
+                                <path
+                                    stroke-linecap="round"
+                                    d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                                />
+                            </svg>
+                        </button>
+                        <a
+                            class="icon-btn"
+                            href="https://github.com/bmlt-enabled/qrcode-svg"
+                            target="_blank"
+                            rel="noopener"
+                            title="View on GitHub"
+                            aria-label="View on GitHub"
+                        >
+                            <svg
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    clip-rule="evenodd"
+                                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                                />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="label">Output Size</div>
+                        <div class="value" id="stat-size">300 × 300</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Correction</div>
+                        <div class="value" id="stat-ecl">M</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Characters</div>
+                        <div class="value" id="stat-chars">12</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Payload Bytes</div>
+                        <div class="value" id="stat-bytes">12</div>
+                    </div>
+                </div>
+
+                <div class="body">
+                    <div class="form">
+                        <h2>Configuration</h2>
+
+                        <div class="field">
+                            <label for="content">Content</label>
+                            <textarea
+                                class="textarea"
+                                id="content"
+                                spellcheck="false"
+                            >Hello World!</textarea>
+                            <span class="hint"
+                                >Text, URL, or any string to encode</span
+                            >
+                        </div>
+
+                        <div class="row">
+                            <div class="field">
+                                <label for="color">Foreground</label>
+                                <label class="color-field">
+                                    <span class="chip" id="chip-color"></span>
+                                    <span class="hex" id="hex-color"
+                                        >#000000</span
+                                    >
+                                    <input
+                                        id="color"
+                                        type="color"
+                                        value="#000000"
+                                    />
+                                </label>
+                            </div>
+                            <div class="field">
+                                <label for="background">Background</label>
+                                <label class="color-field">
+                                    <span
+                                        class="chip"
+                                        id="chip-background"
+                                    ></span>
+                                    <span class="hex" id="hex-background"
+                                        >#FFFFFF</span
+                                    >
+                                    <input
+                                        id="background"
+                                        type="color"
+                                        value="#ffffff"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="field">
+                                <label for="ecl">Error Correction</label>
+                                <select class="select" id="ecl">
+                                    <option value="L">L — 7%</option>
+                                    <option value="M" selected>M — 15%</option>
+                                    <option value="Q">Q — 25%</option>
+                                    <option value="H">H — 30%</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="padding">Padding</label>
+                                <input
+                                    class="input"
+                                    id="padding"
+                                    type="number"
+                                    min="0"
+                                    value="4"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="field">
+                                <label for="width">Width (px)</label>
+                                <input
+                                    class="input"
+                                    id="width"
+                                    type="number"
+                                    min="32"
+                                    value="300"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="height">Height (px)</label>
+                                <input
+                                    class="input"
+                                    id="height"
+                                    type="number"
+                                    min="32"
+                                    value="300"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="alert" id="error"></div>
+                    </div>
+
+                    <div class="preview-col">
+                        <div class="preview-card">
+                            <div id="container"></div>
+                        </div>
+
+                        <div class="meta-row">
+                            <span>Format: <b>SVG</b></span>
+                            <span>Container: <b>svg-viewbox</b></span>
+                            <span>Status: <b id="meta-status">Ready</b></span>
+                        </div>
+
+                        <div class="actions">
+                            <button
+                                class="btn btn-secondary"
+                                id="download-svg"
+                                type="button"
+                            >
+                                <svg
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+                                    />
+                                </svg>
+                                Download SVG
+                            </button>
+                            <button
+                                class="btn btn-primary"
+                                id="download-png"
+                                type="button"
+                            >
+                                <svg
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+                                    />
+                                </svg>
+                                Download PNG
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <a href="https://github.com/bmlt-enabled/qrcode-svg"
+                        >@bmlt-enabled/qrcode-svg</a
+                    >
+                    — MIT License
+                </div>
+            </div>
+        </div>
+
         <script type="module">
             import QRCode from '../dist/qrcode.js'
-            const qrcode = new QRCode({
-                content: 'Hello World!',
-                container: 'svg-viewbox',
-                join: true,
-            })
-            document.getElementById('container').innerHTML = qrcode.svg()
+
+            const fields = {
+                content: document.getElementById('content'),
+                color: document.getElementById('color'),
+                background: document.getElementById('background'),
+                ecl: document.getElementById('ecl'),
+                padding: document.getElementById('padding'),
+                width: document.getElementById('width'),
+                height: document.getElementById('height'),
+            }
+            const container = document.getElementById('container')
+            const errorEl = document.getElementById('error')
+            const chipColor = document.getElementById('chip-color')
+            const chipBg = document.getElementById('chip-background')
+            const hexColor = document.getElementById('hex-color')
+            const hexBg = document.getElementById('hex-background')
+            const statSize = document.getElementById('stat-size')
+            const statEcl = document.getElementById('stat-ecl')
+            const statChars = document.getElementById('stat-chars')
+            const statBytes = document.getElementById('stat-bytes')
+            const metaStatus = document.getElementById('meta-status')
+
+            function syncChrome() {
+                chipColor.style.background = fields.color.value
+                chipBg.style.background = fields.background.value
+                hexColor.textContent = fields.color.value.toUpperCase()
+                hexBg.textContent = fields.background.value.toUpperCase()
+                const w = Number(fields.width.value) || 256
+                const h = Number(fields.height.value) || 256
+                statSize.textContent = `${w} × ${h}`
+                statEcl.textContent = fields.ecl.value
+                statChars.textContent = fields.content.value.length
+                statBytes.textContent = new Blob([fields.content.value]).size
+            }
+
+            function setError(msg) {
+                if (msg) {
+                    errorEl.textContent = msg
+                    errorEl.classList.add('show')
+                    metaStatus.textContent = 'Error'
+                } else {
+                    errorEl.textContent = ''
+                    errorEl.classList.remove('show')
+                    metaStatus.textContent = 'Ready'
+                }
+            }
+
+            function render() {
+                syncChrome()
+                const content = fields.content.value
+                if (!content) {
+                    container.innerHTML = ''
+                    setError('Content is required')
+                    return
+                }
+                try {
+                    const qrcode = new QRCode({
+                        content,
+                        color: fields.color.value,
+                        background: fields.background.value,
+                        ecl: fields.ecl.value,
+                        padding: Number(fields.padding.value) || 0,
+                        width: Number(fields.width.value) || 256,
+                        height: Number(fields.height.value) || 256,
+                        container: 'svg-viewbox',
+                        join: true,
+                        xmlDeclaration: false,
+                    })
+                    container.innerHTML = qrcode.svg()
+                    setError(null)
+                } catch (err) {
+                    setError(err.message || String(err))
+                }
+            }
+
+            for (const el of Object.values(fields)) {
+                el.addEventListener('input', render)
+            }
+            render()
+
+            document
+                .getElementById('theme-toggle')
+                .addEventListener('click', () => {
+                    const isDark =
+                        document.documentElement.classList.toggle('dark')
+                    localStorage.setItem(
+                        'color-theme',
+                        isDark ? 'dark' : 'light',
+                    )
+                })
+
+            function currentSvgMarkup() {
+                const svg = container.querySelector('svg')
+                if (!svg) return null
+                const clone = svg.cloneNode(true)
+                if (!clone.getAttribute('xmlns')) {
+                    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+                }
+                return new XMLSerializer().serializeToString(clone)
+            }
+            function triggerDownload(blob, filename) {
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = filename
+                document.body.appendChild(a)
+                a.click()
+                a.remove()
+                URL.revokeObjectURL(url)
+            }
+            document
+                .getElementById('download-svg')
+                .addEventListener('click', () => {
+                    const markup = currentSvgMarkup()
+                    if (!markup) return
+                    triggerDownload(
+                        new Blob([markup], { type: 'image/svg+xml' }),
+                        'qrcode.svg',
+                    )
+                })
+            document
+                .getElementById('download-png')
+                .addEventListener('click', () => {
+                    const markup = currentSvgMarkup()
+                    if (!markup) return
+                    const width = Number(fields.width.value) || 256
+                    const height = Number(fields.height.value) || 256
+                    const img = new Image()
+                    const svgBlob = new Blob([markup], {
+                        type: 'image/svg+xml;charset=utf-8',
+                    })
+                    const url = URL.createObjectURL(svgBlob)
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas')
+                        canvas.width = width
+                        canvas.height = height
+                        const ctx = canvas.getContext('2d')
+                        ctx.drawImage(img, 0, 0, width, height)
+                        URL.revokeObjectURL(url)
+                        canvas.toBlob((blob) => {
+                            if (blob) triggerDownload(blob, 'qrcode.png')
+                        }, 'image/png')
+                    }
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url)
+                        setError('Failed to rasterize PNG')
+                    }
+                    img.src = url
+                })
         </script>
     </body>
 </html>
