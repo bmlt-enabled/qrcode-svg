@@ -62,8 +62,14 @@
                 margin: 0;
                 padding: 0;
                 font-family:
-                    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-                    'Helvetica Neue', Arial, sans-serif;
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    'Segoe UI',
+                    Roboto,
+                    'Helvetica Neue',
+                    Arial,
+                    sans-serif;
                 font-size: 14px;
                 color: var(--card-fg);
                 -webkit-font-smoothing: antialiased;
@@ -281,11 +287,8 @@
             }
             .select {
                 appearance: none;
-                background-image: linear-gradient(
-                        45deg,
-                        transparent 50%,
-                        currentColor 50%
-                    ),
+                background-image:
+                    linear-gradient(45deg, transparent 50%, currentColor 50%),
                     linear-gradient(135deg, currentColor 50%, transparent 50%);
                 background-position:
                     calc(100% - 16px) 50%,
@@ -344,6 +347,33 @@
             .color-field .hex {
                 font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                 font-size: 13px;
+            }
+
+            /* logo upload */
+            .logo-row {
+                display: flex;
+                gap: 10px;
+            }
+            .logo-row .btn {
+                flex: 1;
+            }
+            .logo-upload {
+                overflow: hidden;
+                position: relative;
+            }
+            .logo-upload span {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .btn[disabled] {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            input[type='range'] {
+                width: 100%;
+                accent-color: var(--primary-600);
+                cursor: pointer;
             }
 
             /* preview */
@@ -619,7 +649,9 @@
                                 class="textarea"
                                 id="content"
                                 spellcheck="false"
-                            >Hello World!</textarea>
+                            >
+Hello World!</textarea
+                            >
                             <span class="hint"
                                 >Text, URL, or any string to encode</span
                             >
@@ -704,6 +736,85 @@
                             </div>
                         </div>
 
+                        <div class="field">
+                            <label for="logo"
+                                >Center Logo
+                                <span
+                                    style="
+                                        font-weight: 400;
+                                        color: var(--muted);
+                                    "
+                                    >(optional)</span
+                                ></label
+                            >
+                            <div class="logo-row">
+                                <label class="btn btn-secondary logo-upload">
+                                    <svg
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M12 16V4m0 0L7 9m5-5l5 5M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+                                        />
+                                    </svg>
+                                    <span id="logo-label">Choose image…</span>
+                                    <input
+                                        id="logo"
+                                        type="file"
+                                        accept="image/*"
+                                        hidden
+                                    />
+                                </label>
+                                <button
+                                    class="btn btn-secondary"
+                                    id="logo-clear"
+                                    type="button"
+                                    disabled
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                            <span class="hint"
+                                >Dropped in the center. Adding a logo bumps
+                                error correction to H so the code still
+                                scans.</span
+                            >
+                        </div>
+
+                        <div
+                            class="row"
+                            id="logo-options"
+                            style="display: none"
+                        >
+                            <div class="field">
+                                <label for="logo-size"
+                                    >Logo Size —
+                                    <span id="logo-size-val">22%</span></label
+                                >
+                                <input
+                                    id="logo-size"
+                                    type="range"
+                                    min="10"
+                                    max="35"
+                                    value="22"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="logo-bg">Backdrop</label>
+                                <select class="select" id="logo-bg">
+                                    <option value="rounded" selected>
+                                        Rounded box
+                                    </option>
+                                    <option value="circle">Circle</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="alert" id="error"></div>
                     </div>
 
@@ -784,6 +895,14 @@
             }
             const container = document.getElementById('container')
             const errorEl = document.getElementById('error')
+            const logoInput = document.getElementById('logo')
+            const logoLabel = document.getElementById('logo-label')
+            const logoClear = document.getElementById('logo-clear')
+            const logoOptions = document.getElementById('logo-options')
+            const logoSize = document.getElementById('logo-size')
+            const logoSizeVal = document.getElementById('logo-size-val')
+            const logoBg = document.getElementById('logo-bg')
+            let logoDataUrl = null
             const chipColor = document.getElementById('chip-color')
             const chipBg = document.getElementById('chip-background')
             const hexColor = document.getElementById('hex-color')
@@ -841,15 +960,97 @@
                         xmlDeclaration: false,
                     })
                     container.innerHTML = qrcode.svg()
+                    applyLogo()
                     setError(null)
                 } catch (err) {
                     setError(err.message || String(err))
                 }
             }
 
+            const SVG_NS = 'http://www.w3.org/2000/svg'
+            const XLINK_NS = 'http://www.w3.org/1999/xlink'
+
+            function applyLogo() {
+                if (!logoDataUrl) return
+                const svg = container.querySelector('svg')
+                if (!svg) return
+                const vb = svg.viewBox.baseVal
+                const W = vb.width || Number(fields.width.value) || 256
+                const H = vb.height || Number(fields.height.value) || 256
+                const cx = vb.x + W / 2
+                const cy = vb.y + H / 2
+                const size = Math.min(W, H) * (Number(logoSize.value) / 100)
+                const x = cx - size / 2
+                const y = cy - size / 2
+                const pad = size * 0.14
+                const backdrop = logoBg.value
+
+                if (backdrop !== 'none') {
+                    let shape
+                    if (backdrop === 'circle') {
+                        shape = document.createElementNS(SVG_NS, 'circle')
+                        shape.setAttribute('cx', cx)
+                        shape.setAttribute('cy', cy)
+                        shape.setAttribute('r', size / 2 + pad)
+                    } else {
+                        shape = document.createElementNS(SVG_NS, 'rect')
+                        shape.setAttribute('x', x - pad)
+                        shape.setAttribute('y', y - pad)
+                        shape.setAttribute('width', size + pad * 2)
+                        shape.setAttribute('height', size + pad * 2)
+                        shape.setAttribute('rx', size * 0.12)
+                    }
+                    shape.setAttribute('fill', fields.background.value)
+                    svg.appendChild(shape)
+                }
+
+                const img = document.createElementNS(SVG_NS, 'image')
+                img.setAttribute('x', x)
+                img.setAttribute('y', y)
+                img.setAttribute('width', size)
+                img.setAttribute('height', size)
+                img.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+                img.setAttribute('href', logoDataUrl)
+                img.setAttributeNS(XLINK_NS, 'xlink:href', logoDataUrl)
+                svg.appendChild(img)
+            }
+
             for (const el of Object.values(fields)) {
                 el.addEventListener('input', render)
             }
+
+            logoInput.addEventListener('change', () => {
+                const file = logoInput.files && logoInput.files[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = () => {
+                    logoDataUrl = reader.result
+                    logoLabel.textContent = file.name
+                    logoClear.disabled = false
+                    logoOptions.style.display = ''
+                    // Logos cover modules — H correction keeps it scannable.
+                    fields.ecl.value = 'H'
+                    render()
+                }
+                reader.onerror = () => setError('Could not read that image')
+                reader.readAsDataURL(file)
+            })
+
+            logoClear.addEventListener('click', () => {
+                logoDataUrl = null
+                logoInput.value = ''
+                logoLabel.textContent = 'Choose image…'
+                logoClear.disabled = true
+                logoOptions.style.display = 'none'
+                render()
+            })
+
+            logoSize.addEventListener('input', () => {
+                logoSizeVal.textContent = `${logoSize.value}%`
+                render()
+            })
+            logoBg.addEventListener('change', render)
+
             render()
 
             document
