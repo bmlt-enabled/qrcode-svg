@@ -55,6 +55,10 @@ const svg = qrcode.svg()
 - **xmlDeclaration** - prepend XML declaration to the SVG document, i.e. `<?xml version="1.0" standalone="yes"?>`, default: `true`
 - **container** - wrapping element, default: `svg`, see below
 - **typeNumber** - QR version (1–40), determined automatically if not set
+- **image** - center logo to overlay, as a URL or data URI, see [Center logo](#center-logo)
+- **imageSize** - logo size as a fraction of the QR's shorter side (`0`–`1`), default: `0.2`
+- **imageBackground** - backdrop fill behind the logo, default: the `background` color
+- **imageBackgroundShape** - backdrop shape: `rounded` (default), `circle`, or `none`
 
 **Container options:**
 
@@ -148,6 +152,30 @@ Output with `defs` and `use` elements
 </svg>
 ```
 
+### Center logo
+
+Overlay a logo in the middle of the QR Code by passing an `image` (a URL or
+data URI). The image is drawn on top of the modules — it does **not** remove
+any data. The modules it covers are recovered by error correction, so set
+`ecl: 'H'` and keep the logo small (≈20–25%) so the code still scans.
+
+```javascript
+const qrcode = new QRCode({
+    content: 'https://bmlt.app',
+    ecl: 'H', // high error correction keeps it scannable under the logo
+    image: 'data:image/png;base64,iVBORw0KGgo...', // or 'https://…/logo.png'
+    imageSize: 0.22, // fraction of the shorter side
+    imageBackgroundShape: 'rounded', // 'rounded' | 'circle' | 'none'
+    container: 'svg-viewbox',
+    join: true,
+})
+```
+
+A backdrop in the `background` color (or `imageBackground`) is drawn behind the
+logo by default so it stays legible against the modules. The logo is emitted as
+an `<image>` element in the SVG, so it is included in any PNG you rasterize from
+it. The `path-data` container ignores `image` (it returns path data only).
+
 ## Usage in the browser
 
 ```html
@@ -189,4 +217,3 @@ Thanks to [davidshimjs](https://github.com/davidshimjs/qrcodejs) for the base li
 Licensed under the [MIT license](https://opensource.org/license/mit).
 
 The word "QR Code" is a registered trademark of [DENSO WAVE INCORPORATED](https://www.qrcode.com/en/patent.html).
-

@@ -255,3 +255,110 @@ describe('color and background options', () => {
         expect(svg).toMatch(/fill:#0000ff/)
     })
 })
+
+describe('image (center logo) option', () => {
+    const LOGO = 'data:image/png;base64,iVBORw0KGgo='
+
+    it('omits an <image> element when no image is given', () => {
+        const svg = new QRCode({ content: 'test' }).svg()
+        expect(svg).not.toMatch(/<image\s/)
+    })
+
+    it('embeds an <image> with the given href', () => {
+        const svg = new QRCode({ content: 'test', image: LOGO }).svg()
+        expect(svg).toMatch(/<image\s/)
+        expect(svg).toContain('href="' + LOGO + '"')
+    })
+
+    it('draws a rounded backdrop by default and supports circle/none', () => {
+        const rounded = new QRCode({ content: 'test', image: LOGO }).svg()
+        expect(rounded).toMatch(/<rect[^>]+rx=/)
+
+        const circle = new QRCode({
+            content: 'test',
+            image: LOGO,
+            imageBackgroundShape: 'circle',
+        }).svg()
+        expect(circle).toMatch(/<circle\s/)
+
+        const none = new QRCode({
+            content: 'test',
+            image: LOGO,
+            imageBackgroundShape: 'none',
+        }).svg()
+        // only the full-canvas background rect, no extra backdrop shape
+        expect(none).not.toMatch(/<circle\s/)
+        expect(none).not.toMatch(/rx=/)
+    })
+
+    it('scales the image with imageSize', () => {
+        const small = new QRCode({
+            content: 'test',
+            image: LOGO,
+            imageSize: 0.1,
+            width: 300,
+            height: 300,
+        }).svg()
+        const big = new QRCode({
+            content: 'test',
+            image: LOGO,
+            imageSize: 0.4,
+            width: 300,
+            height: 300,
+        }).svg()
+        const widthOf = (svg) =>
+            Number(svg.match(/<image[^>]+width="([\d.]+)"/)[1])
+        expect(widthOf(small)).toBeCloseTo(30, 5)
+        expect(widthOf(big)).toBeCloseTo(120, 5)
+    })
+
+    it('uses imageBackground color for the backdrop', () => {
+        const svg = new QRCode({
+            content: 'test',
+            image: LOGO,
+            imageBackground: '#abcdef',
+        }).svg()
+        expect(svg).toMatch(/<rect[^>]+fill:#abcdef/)
+    })
+
+    it('escapes special characters in the image href', () => {
+        const svg = new QRCode({
+            content: 'test',
+            image: 'https://x.test/l.png?a=1&b=2',
+        }).svg()
+        expect(svg).toContain('a=1&amp;b=2')
+        expect(svg).not.toContain('a=1&b=2')
+    })
+
+    it('appears in svg, svg-viewbox, g and none containers', () => {
+        for (const container of ['svg', 'svg-viewbox', 'g', 'none']) {
+            const svg = new QRCode({ content: 'test', image: LOGO }).svg({
+                container,
+            })
+            expect(svg).toMatch(/<image\s/)
+        }
+    })
+
+    it('is ignored for the path-data container', () => {
+        const svg = new QRCode({ content: 'test', image: LOGO }).svg({
+            container: 'path-data',
+        })
+        expect(svg).not.toMatch(/<image\s/)
+    })
+
+    it('rejects a non-string image', () => {
+        expect(() => new QRCode({ content: 'test', image: 123 })).toThrow()
+    })
+
+    it('rejects an imageSize outside (0, 1]', () => {
+        expect(
+            () => new QRCode({ content: 'test', image: LOGO, imageSize: 0 }),
+        ).toThrow()
+        expect(
+            () => new QRCode({ content: 'test', image: LOGO, imageSize: 1.5 }),
+        ).toThrow()
+        expect(
+            () => new QRCode({ content: 'test', image: LOGO, imageSize: 1 }),
+        ).not.toThrow()
+    })
+})

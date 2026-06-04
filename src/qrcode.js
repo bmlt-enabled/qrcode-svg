@@ -1289,6 +1289,22 @@ function QRCode(options) {
         )
     }
 
+    if (
+        this.options.image !== undefined &&
+        typeof this.options.image !== 'string'
+    ) {
+        throw new Error("Expected 'image' to be a string (URL or data URI)!")
+    }
+
+    if (
+        this.options.imageSize !== undefined &&
+        !(this.options.imageSize > 0 && this.options.imageSize <= 1)
+    ) {
+        throw new Error(
+            "Expected 'imageSize' to be a fraction greater than 0 and up to 1!",
+        )
+    }
+
     //Gets the error correction level
     function _getErrorCorrectLevel(ecl) {
         switch (ecl) {
@@ -1512,6 +1528,79 @@ QRCode.prototype.svg = function (opt) {
             '" />'
     }
 
+    //Center image (logo) overlay, drawn on top of the modules.
+    //Covered modules are recovered by error correction, so use a high
+    //ecl (e.g. 'H') when embedding an image.
+    let imgmarkup = ''
+    if (options.image) {
+        const fmt = (n) => (Number.isInteger(n) ? n : Number(n.toFixed(2)))
+        const escapeAttr = (s) =>
+            String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+
+        const imageSize = options.imageSize ?? 0.2
+        const size = Math.min(width, height) * imageSize
+        const cx = width / 2
+        const cy = height / 2
+        const x = cx - size / 2
+        const y = cy - size / 2
+        const pad = size * 0.14
+        const shape = options.imageBackgroundShape ?? 'rounded'
+        const imgBg = options.imageBackground ?? options.background
+
+        if (shape !== 'none') {
+            if (shape === 'circle') {
+                imgmarkup +=
+                    indent +
+                    '<circle cx="' +
+                    fmt(cx) +
+                    '" cy="' +
+                    fmt(cy) +
+                    '" r="' +
+                    fmt(size / 2 + pad) +
+                    '" style="fill:' +
+                    imgBg +
+                    ';"/>' +
+                    EOL
+            } else {
+                imgmarkup +=
+                    indent +
+                    '<rect x="' +
+                    fmt(x - pad) +
+                    '" y="' +
+                    fmt(y - pad) +
+                    '" width="' +
+                    fmt(size + pad * 2) +
+                    '" height="' +
+                    fmt(size + pad * 2) +
+                    '" rx="' +
+                    fmt(size * 0.12) +
+                    '" style="fill:' +
+                    imgBg +
+                    ';"/>' +
+                    EOL
+            }
+        }
+
+        imgmarkup +=
+            indent +
+            '<image x="' +
+            fmt(x) +
+            '" y="' +
+            fmt(y) +
+            '" width="' +
+            fmt(size) +
+            '" height="' +
+            fmt(size) +
+            '" preserveAspectRatio="xMidYMid meet" href="' +
+            escapeAttr(options.image) +
+            '"/>' +
+            EOL
+    }
+
     let svg = ''
     switch (opt.container) {
         //Wrapped in SVG document
@@ -1526,7 +1615,7 @@ QRCode.prototype.svg = function (opt) {
                 height +
                 '">' +
                 EOL
-            svg += defs + bgrect + modrect
+            svg += defs + bgrect + modrect + imgmarkup
             svg += '</svg>'
             break
 
@@ -1542,14 +1631,14 @@ QRCode.prototype.svg = function (opt) {
                 height +
                 '">' +
                 EOL
-            svg += defs + bgrect + modrect
+            svg += defs + bgrect + modrect + imgmarkup
             svg += '</svg>'
             break
 
         //Wrapped in group element
         case 'g':
             svg += '<g width="' + width + '" height="' + height + '">' + EOL
-            svg += defs + bgrect + modrect
+            svg += defs + bgrect + modrect + imgmarkup
             svg += '</g>'
             break
 
@@ -1560,7 +1649,7 @@ QRCode.prototype.svg = function (opt) {
 
         //Without a container
         default: //Clear indents on each line
-            svg += (defs + bgrect + modrect).replace(/^\s+/, '')
+            svg += (defs + bgrect + modrect + imgmarkup).replace(/^\s+/, '')
             break
     }
 

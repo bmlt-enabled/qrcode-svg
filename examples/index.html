@@ -958,61 +958,16 @@ Hello World!</textarea
                         container: 'svg-viewbox',
                         join: true,
                         xmlDeclaration: false,
+                        // Center logo is baked into the SVG by the library.
+                        image: logoDataUrl || undefined,
+                        imageSize: Number(logoSize.value) / 100,
+                        imageBackgroundShape: logoBg.value,
                     })
                     container.innerHTML = qrcode.svg()
-                    applyLogo()
                     setError(null)
                 } catch (err) {
                     setError(err.message || String(err))
                 }
-            }
-
-            const SVG_NS = 'http://www.w3.org/2000/svg'
-            const XLINK_NS = 'http://www.w3.org/1999/xlink'
-
-            function applyLogo() {
-                if (!logoDataUrl) return
-                const svg = container.querySelector('svg')
-                if (!svg) return
-                const vb = svg.viewBox.baseVal
-                const W = vb.width || Number(fields.width.value) || 256
-                const H = vb.height || Number(fields.height.value) || 256
-                const cx = vb.x + W / 2
-                const cy = vb.y + H / 2
-                const size = Math.min(W, H) * (Number(logoSize.value) / 100)
-                const x = cx - size / 2
-                const y = cy - size / 2
-                const pad = size * 0.14
-                const backdrop = logoBg.value
-
-                if (backdrop !== 'none') {
-                    let shape
-                    if (backdrop === 'circle') {
-                        shape = document.createElementNS(SVG_NS, 'circle')
-                        shape.setAttribute('cx', cx)
-                        shape.setAttribute('cy', cy)
-                        shape.setAttribute('r', size / 2 + pad)
-                    } else {
-                        shape = document.createElementNS(SVG_NS, 'rect')
-                        shape.setAttribute('x', x - pad)
-                        shape.setAttribute('y', y - pad)
-                        shape.setAttribute('width', size + pad * 2)
-                        shape.setAttribute('height', size + pad * 2)
-                        shape.setAttribute('rx', size * 0.12)
-                    }
-                    shape.setAttribute('fill', fields.background.value)
-                    svg.appendChild(shape)
-                }
-
-                const img = document.createElementNS(SVG_NS, 'image')
-                img.setAttribute('x', x)
-                img.setAttribute('y', y)
-                img.setAttribute('width', size)
-                img.setAttribute('height', size)
-                img.setAttribute('preserveAspectRatio', 'xMidYMid meet')
-                img.setAttribute('href', logoDataUrl)
-                img.setAttributeNS(XLINK_NS, 'xlink:href', logoDataUrl)
-                svg.appendChild(img)
             }
 
             for (const el of Object.values(fields)) {
