@@ -735,6 +735,53 @@ Hello World!</textarea>
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="field">
+                                <label for="frame-shape">Outer Shape</label>
+                                <select class="select" id="frame-shape">
+                                    <option value="square" selected>
+                                        Square
+                                    </option>
+                                    <option value="diamond">
+                                        Diamond (NA)
+                                    </option>
+                                    <option value="triangle">
+                                        Triangle (AA)
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="module-shape">Module Shape</label>
+                                <select class="select" id="module-shape">
+                                    <option value="square" selected>
+                                        Square
+                                    </option>
+                                    <option value="diamond">Diamond</option>
+                                    <option value="triangle">Triangle</option>
+                                    <option value="circle">Circle</option>
+                                    <option value="rounded">Rounded</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div
+                            class="field"
+                            id="frame-fill-row"
+                            style="display: none"
+                        >
+                            <label for="frame-fill"
+                                >Code Fill —
+                                <span id="frame-fill-val">94%</span></label
+                            >
+                            <input
+                                id="frame-fill"
+                                type="range"
+                                min="50"
+                                max="100"
+                                value="94"
+                            />
+                        </div>
+
                         <div class="field">
                             <label for="logo"
                                 >Center Logo
@@ -891,6 +938,8 @@ Hello World!</textarea>
                 padding: document.getElementById('padding'),
                 width: document.getElementById('width'),
                 height: document.getElementById('height'),
+                moduleShape: document.getElementById('module-shape'),
+                frameShape: document.getElementById('frame-shape'),
             }
             const container = document.getElementById('container')
             const errorEl = document.getElementById('error')
@@ -901,6 +950,9 @@ Hello World!</textarea>
             const logoSize = document.getElementById('logo-size')
             const logoSizeVal = document.getElementById('logo-size-val')
             const logoBg = document.getElementById('logo-bg')
+            const frameFill = document.getElementById('frame-fill')
+            const frameFillVal = document.getElementById('frame-fill-val')
+            const frameFillRow = document.getElementById('frame-fill-row')
             let logoDataUrl = null
             const chipColor = document.getElementById('chip-color')
             const chipBg = document.getElementById('chip-background')
@@ -923,6 +975,9 @@ Hello World!</textarea>
                 statEcl.textContent = fields.ecl.value
                 statChars.textContent = fields.content.value.length
                 statBytes.textContent = new Blob([fields.content.value]).size
+                frameFillRow.style.display =
+                    fields.frameShape.value === 'triangle' ? '' : 'none'
+                frameFillVal.textContent = `${frameFill.value}%`
             }
 
             function setError(msg) {
@@ -954,6 +1009,9 @@ Hello World!</textarea>
                         padding: Number(fields.padding.value) || 0,
                         width: Number(fields.width.value) || 256,
                         height: Number(fields.height.value) || 256,
+                        moduleShape: fields.moduleShape.value,
+                        frameShape: fields.frameShape.value,
+                        frameFill: Number(frameFill.value) / 100,
                         container: 'svg-viewbox',
                         join: true,
                         xmlDeclaration: false,
@@ -1004,6 +1062,10 @@ Hello World!</textarea>
                 render()
             })
             logoBg.addEventListener('change', render)
+            frameFill.addEventListener('input', () => {
+                frameFillVal.textContent = `${frameFill.value}%`
+                render()
+            })
 
             render()
 

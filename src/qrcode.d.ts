@@ -19,6 +19,30 @@ export interface QRCodeOptions {
     ecl?: ErrorCorrectionLevel
     /** Join modules into a single `<path>` element. Default: `false`. */
     join?: boolean
+    /**
+     * Shape of the data modules. Finder patterns always stay square so
+     * scanners can lock on reliably. Default: `'square'`.
+     * - `'diamond'` — square-on-point (NA style)
+     * - `'triangle'` — upward triangle (AA style)
+     * - `'circle'` — dots
+     * - `'rounded'` — rounded squares
+     */
+    moduleShape?: 'square' | 'diamond' | 'triangle' | 'circle' | 'rounded'
+    /**
+     * Overall image ("outer box") shape. The scannable data matrix always
+     * stays square. Default: `'square'`.
+     * - `'diamond'` — the whole code is rotated 45° to stand on-point (NA look)
+     * - `'triangle'` — the square code is nested inside an outlined triangle (AA look)
+     *
+     * Only applies to the `svg`, `svg-viewbox` and `g` containers.
+     */
+    frameShape?: 'square' | 'diamond' | 'triangle'
+    /**
+     * For `frameShape: 'triangle'`, how much of the available space the code
+     * fills (`0`–`1`). `1` pushes the code right up to the triangle's sides
+     * and base; lower values pull it in. Default: `0.94`.
+     */
+    frameFill?: number
     /** Use `<defs>`/`<use>` for module shapes. Default: `false`. */
     predefined?: boolean
     /** Pretty-print the SVG output. Default: `true`. */

@@ -1419,17 +1419,77 @@ QRCode.prototype.svg = function (opt) {
     //Apply <?xml...?> declaration in SVG?
     const xmlDeclaration = !!(options.xmlDeclaration ?? true)
 
+    //Module shape: 'square' (default), 'diamond' (square-on-point, NA look),
+    //'triangle' (AA look), 'circle' (dots), or 'rounded' (rounded squares).
+    //Position detection ("finder") patterns always stay square so scanners
+    //can reliably lock on.
+    const moduleShape = (options.moduleShape || 'square').toLowerCase()
+    const stylized = moduleShape !== 'square'
+    const inFinder = (x, y) =>
+        (x < 7 && y < 7) ||
+        (x >= length - 7 && y < 7) ||
+        (x < 7 && y >= length - 7)
+    const rendering = stylized ? 'geometricPrecision' : 'crispEdges'
+    const fmtN = (n) => (Number.isInteger(n) ? Number(n) : Number(n.toFixed(2)))
+    //SVG path 'd' for one module whose top-left corner is (px, py).
+    const modulePath = (px, py, shape) => {
+        const r = px + xsize
+        const b = py + ysize
+        const cx = px + xsize / 2
+        const cy = py + ysize / 2
+        const P = (a, c) => fmtN(a) + ',' + fmtN(c)
+        const A = (rad) => 'A' + fmtN(rad) + ',' + fmtN(rad) + ' 0 '
+        if (shape === 'diamond') {
+            return (
+                'M' + P(cx, py) + 'L' + P(r, cy) + 'L' + P(cx, b) + 'L' + P(px, cy) + 'Z'
+            )
+        }
+        if (shape === 'triangle') {
+            return 'M' + P(cx, py) + 'L' + P(r, b) + 'L' + P(px, b) + 'Z'
+        }
+        if (shape === 'circle') {
+            const rad = Math.min(xsize, ysize) / 2
+            return (
+                'M' + P(cx - rad, cy) +
+                A(rad) + '1 1 ' + P(cx + rad, cy) +
+                A(rad) + '1 1 ' + P(cx - rad, cy) +
+                'Z'
+            )
+        }
+        if (shape === 'rounded') {
+            const rr = Math.min(xsize, ysize) * 0.3
+            return (
+                'M' + P(px + rr, py) +
+                'H' + fmtN(r - rr) + A(rr) + '0 1 ' + P(r, py + rr) +
+                'V' + fmtN(b - rr) + A(rr) + '0 1 ' + P(r - rr, b) +
+                'H' + fmtN(px + rr) + A(rr) + '0 1 ' + P(px, b - rr) +
+                'V' + fmtN(py + rr) + A(rr) + '0 1 ' + P(px + rr, py) +
+                'Z'
+            )
+        }
+        return 'M' + P(px, py) + 'L' + P(r, py) + 'L' + P(r, b) + 'L' + P(px, b) + 'Z'
+    }
+
     //Populate with predefined shape instead of "rect" elements, thanks to @kkocdko
     const predefined = !!options.predefined
     const defs = predefined
         ? indent +
-          '<defs><path id="qrmodule" d="M0 0 h' +
-          ysize +
-          ' v' +
-          xsize +
-          ' H0 z" style="fill:' +
+          '<defs>' +
+          '<path id="qrmodule" d="' +
+          modulePath(0, 0, moduleShape) +
+          '" style="fill:' +
           options.color +
-          ';shape-rendering:crispEdges;" /></defs>' +
+          ';shape-rendering:' +
+          rendering +
+          ';" />' +
+          (stylized
+              ? '<path id="qrfinder" d="' +
+                modulePath(0, 0, 'square') +
+                '" style="fill:' +
+                options.color +
+                ';shape-rendering:crispEdges;" />'
+              : '') +
+          '</defs>' +
           EOL
         : ''
 
@@ -1463,8 +1523,14 @@ QRCode.prototype.svg = function (opt) {
                     py = t
                 }
 
-                if (join) {
-                    //Module as a part of svg path data, thanks to @danioso
+                const shape =
+                    stylized && inFinder(x, y) ? 'square' : moduleShape
+
+                if (join && shape !== 'square') {
+                    //Stylized module as svg path data
+                    pathdata += modulePath(px, py, shape) + ' '
+                } else if (join) {
+                    //Square module as a part of svg path data, thanks to @danioso
                     let w = xsize + px
                     let h = ysize + py
 
@@ -1495,9 +1561,13 @@ QRCode.prototype.svg = function (opt) {
                         px.toString() +
                         '" y="' +
                         py.toString() +
-                        '" href="#qrmodule" />' +
+                        '" href="' +
+                        (shape === 'square' && stylized
+                            ? '#qrfinder'
+                            : '#qrmodule') +
+                        '" />' +
                         EOL
-                } else {
+                } else if (shape === 'square') {
                     //Module as rectangle element
                     modrect +=
                         indent +
@@ -1513,6 +1583,18 @@ QRCode.prototype.svg = function (opt) {
                         options.color +
                         ';shape-rendering:crispEdges;"/>' +
                         EOL
+                } else {
+                    //Module as a stylized (diamond/triangle) path element
+                    modrect +=
+                        indent +
+                        '<path d="' +
+                        modulePath(px, py, shape) +
+                        '" style="fill:' +
+                        options.color +
+                        ';shape-rendering:' +
+                        rendering +
+                        ';"/>' +
+                        EOL
                 }
             }
         }
@@ -1523,7 +1605,9 @@ QRCode.prototype.svg = function (opt) {
             indent +
             '<path x="0" y="0" style="fill:' +
             options.color +
-            ';shape-rendering:crispEdges;" d="' +
+            ';shape-rendering:' +
+            rendering +
+            ';" d="' +
             pathdata +
             '" />'
     }
@@ -1601,6 +1685,95 @@ QRCode.prototype.svg = function (opt) {
             EOL
     }
 
+    //Overall image ("outer box") shape. The scannable data matrix stays
+    //square; 'diamond' rotates the whole code 45° so it stands on-point (NA
+    //look) and 'triangle' nests the square code inside an outlined triangle
+    //(AA look). The surrounding area is left transparent.
+    const frameShape = (options.frameShape || 'square').toLowerCase()
+    let content = defs + bgrect + modrect + imgmarkup
+    let canvasW = width
+    let canvasH = height
+
+    if (frameShape === 'diamond') {
+        const fw = (width + height) * Math.SQRT1_2
+        const tx = (fw - width) / 2
+        const ty = (fw - height) / 2
+        content =
+            indent +
+            '<g transform="translate(' +
+            fmtN(tx) +
+            ' ' +
+            fmtN(ty) +
+            ') rotate(45 ' +
+            fmtN(width / 2) +
+            ' ' +
+            fmtN(height / 2) +
+            ')">' +
+            EOL +
+            content +
+            indent +
+            '</g>' +
+            EOL
+        canvasW = fmtN(fw)
+        canvasH = fmtN(fw)
+    } else if (frameShape === 'triangle') {
+        //A filled triangle is the code's light background (its quiet zone).
+        //The code is sized to the largest square that fits with its base on
+        //the triangle base, so its top corners push right up to the slanted
+        //sides. `frameFill` (0–1) dials that back off the edges.
+        const baseHalf = 1.15 * width
+        const triH = 1.6 * height
+        const cx = baseHalf
+        const sw = Math.max(width, height) * 0.03
+        const tri =
+            indent +
+            '<path d="M' +
+            fmtN(cx) +
+            ',0 L' +
+            fmtN(2 * baseHalf) +
+            ',' +
+            fmtN(triH) +
+            ' L0,' +
+            fmtN(triH) +
+            ' Z" style="fill:' +
+            options.background +
+            ';stroke:' +
+            options.color +
+            ';stroke-width:' +
+            fmtN(sw) +
+            ';stroke-linejoin:round;"/>' +
+            EOL
+        const fill = Math.min(Math.max(options.frameFill ?? 0.94, 0.3), 1)
+        //Keep the code's base just above the triangle base (clear of the stroke).
+        const marginB = sw * 1.5 + height * 0.01
+        const yBottom = triH - marginB
+        //Largest square that fits base-on-base inside the sub-triangle above
+        //yBottom; its top corners land on the slanted sides when fill = 1.
+        const aFit = (2 * baseHalf * yBottom) / (triH + 2 * baseHalf)
+        const sc = (aFit * fill) / width
+        const tx = cx - (sc * width) / 2
+        const ty = yBottom - sc * height
+        content =
+            defs +
+            tri +
+            indent +
+            '<g transform="translate(' +
+            fmtN(tx) +
+            ' ' +
+            fmtN(ty) +
+            ') scale(' +
+            fmtN(sc) +
+            ')">' +
+            EOL +
+            modrect +
+            imgmarkup +
+            indent +
+            '</g>' +
+            EOL
+        canvasW = fmtN(2 * baseHalf)
+        canvasH = fmtN(triH)
+    }
+
     let svg = ''
     switch (opt.container) {
         //Wrapped in SVG document
@@ -1610,12 +1783,12 @@ QRCode.prototype.svg = function (opt) {
             }
             svg +=
                 '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="' +
-                width +
+                canvasW +
                 '" height="' +
-                height +
+                canvasH +
                 '">' +
                 EOL
-            svg += defs + bgrect + modrect + imgmarkup
+            svg += content
             svg += '</svg>'
             break
 
@@ -1626,19 +1799,19 @@ QRCode.prototype.svg = function (opt) {
             }
             svg +=
                 '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 ' +
-                width +
+                canvasW +
                 ' ' +
-                height +
+                canvasH +
                 '">' +
                 EOL
-            svg += defs + bgrect + modrect + imgmarkup
+            svg += content
             svg += '</svg>'
             break
 
         //Wrapped in group element
         case 'g':
-            svg += '<g width="' + width + '" height="' + height + '">' + EOL
-            svg += defs + bgrect + modrect + imgmarkup
+            svg += '<g width="' + canvasW + '" height="' + canvasH + '">' + EOL
+            svg += content
             svg += '</g>'
             break
 
@@ -1649,7 +1822,7 @@ QRCode.prototype.svg = function (opt) {
 
         //Without a container
         default: //Clear indents on each line
-            svg += (defs + bgrect + modrect + imgmarkup).replace(/^\s+/, '')
+            svg += content.replace(/^\s+/, '')
             break
     }
 
