@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selector exposing all of the above (Text / URL, Wi-Fi, Phone, SMS, Email,
   Location, Contact vCard/MeCard, Calendar event), plus **Outer Shape**,
   **Module Shape** and a **Code Fill** slider (shown for the triangle frame).
+  The Location type includes an expandable OpenStreetMap (Leaflet) picker with a
+  draggable pin and Nominatim place search.
 
 ### Notes
 

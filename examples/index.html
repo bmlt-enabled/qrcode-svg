@@ -5,6 +5,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>BMLT — QR Code Playground</title>
         <link rel="icon" type="image/png" href="./bmlt.png" />
+        <!-- Leaflet (OpenStreetMap) — used only by the Location map picker -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+            integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+            integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
         <style>
             :root {
                 --primary-50: #e6f2ff;
@@ -546,6 +560,50 @@
             .dark .footer a {
                 color: var(--primary-400);
             }
+            /* Location map picker */
+            #geo-map {
+                height: 280px;
+                width: 100%;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                margin-top: 10px;
+                z-index: 0;
+            }
+            .geo-search {
+                display: flex;
+                gap: 8px;
+            }
+            .geo-search .input {
+                flex: 1;
+            }
+            .geo-results {
+                list-style: none;
+                margin: 8px 0 0;
+                padding: 0;
+                max-height: 160px;
+                overflow-y: auto;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+            }
+            .geo-results li {
+                padding: 8px 10px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                border-bottom: 1px solid var(--border);
+            }
+            .geo-results li:last-child {
+                border-bottom: none;
+            }
+            .geo-results li:hover {
+                background: var(--primary-50);
+            }
+            .dark .geo-results li:hover {
+                background: var(--surface-2, rgba(255, 255, 255, 0.06));
+            }
+            /* Keep Leaflet controls above our chrome */
+            .leaflet-container {
+                font: inherit;
+            }
         </style>
         <script>
             ;(function () {
@@ -823,6 +881,54 @@ Hello World!</textarea>
                                     type="text"
                                     placeholder="Pin label (optional)"
                                 />
+                            </div>
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                id="geo-map-toggle"
+                                aria-expanded="false"
+                            >
+                                Pick on map ▾
+                            </button>
+                            <div
+                                id="geo-map-panel"
+                                style="display: none; margin-top: 12px"
+                            >
+                                <div class="geo-search">
+                                    <input
+                                        class="input"
+                                        id="geo-search"
+                                        type="text"
+                                        placeholder="Search a place or address…"
+                                        autocomplete="off"
+                                    />
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        id="geo-search-btn"
+                                    >
+                                        Search
+                                    </button>
+                                </div>
+                                <ul
+                                    id="geo-results"
+                                    class="geo-results"
+                                    style="display: none"
+                                ></ul>
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    id="geo-locate"
+                                    style="margin-top: 8px"
+                                >
+                                    📍 Use my current location
+                                </button>
+                                <div id="geo-map"></div>
+                                <span class="hint"
+                                    >Drag the pin or click the map to set the
+                                    location. Search uses OpenStreetMap
+                                    Nominatim.</span
+                                >
                             </div>
                         </div>
 
@@ -1471,6 +1577,177 @@ Hello World!</textarea>
                 if (!compactTypes.has(contentType.value))
                     fields.ecl.value = 'H'
                 render()
+            })
+
+            // --- Location map picker (Leaflet + OpenStreetMap + Nominatim) ---
+            let geoMap = null
+            let geoMarker = null
+            if (typeof L !== 'undefined') {
+                const img =
+                    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/'
+                L.Icon.Default.mergeOptions({
+                    iconRetinaUrl: img + 'marker-icon-2x.png',
+                    iconUrl: img + 'marker-icon.png',
+                    shadowUrl: img + 'marker-shadow.png',
+                })
+            }
+
+            function setGeoFromMarker() {
+                const { lat, lng } = geoMarker.getLatLng()
+                $('geo-lat').value = lat.toFixed(6)
+                $('geo-lng').value = lng.toFixed(6)
+                render()
+            }
+
+            function initGeoMap() {
+                if (geoMap || typeof L === 'undefined') return
+                const hasCoords = $('geo-lat').value && $('geo-lng').value
+                const lat = Number($('geo-lat').value) || 20
+                const lng = Number($('geo-lng').value) || 0
+                geoMap = L.map('geo-map').setView(
+                    [lat, lng],
+                    hasCoords ? 13 : 2,
+                )
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap contributors',
+                    },
+                ).addTo(geoMap)
+                geoMarker = L.marker([lat, lng], { draggable: true }).addTo(
+                    geoMap,
+                )
+                geoMarker.on('dragend', setGeoFromMarker)
+                geoMap.on('click', (e) => {
+                    geoMarker.setLatLng(e.latlng)
+                    setGeoFromMarker()
+                })
+            }
+
+            $('geo-map-toggle').addEventListener('click', () => {
+                const panel = $('geo-map-panel')
+                const open = panel.style.display === 'none'
+                panel.style.display = open ? '' : 'none'
+                $('geo-map-toggle').setAttribute('aria-expanded', String(open))
+                $('geo-map-toggle').textContent = open
+                    ? 'Hide map ▴'
+                    : 'Pick on map ▾'
+                if (open) {
+                    initGeoMap()
+                    // The container was hidden at creation; fix its size.
+                    setTimeout(() => geoMap && geoMap.invalidateSize(), 0)
+                }
+            })
+
+            // Keep the marker in sync when the lat/lng are typed by hand.
+            for (const id of ['geo-lat', 'geo-lng']) {
+                $(id).addEventListener('input', () => {
+                    if (!geoMarker) return
+                    const lat = Number($('geo-lat').value)
+                    const lng = Number($('geo-lng').value)
+                    if (
+                        isFinite(lat) &&
+                        isFinite(lng) &&
+                        $('geo-lat').value &&
+                        $('geo-lng').value
+                    ) {
+                        geoMarker.setLatLng([lat, lng])
+                        geoMap.panTo([lat, lng])
+                    }
+                })
+            }
+
+            async function geoSearch() {
+                const q = $('geo-search').value.trim()
+                const list = $('geo-results')
+                if (!q) {
+                    list.style.display = 'none'
+                    return
+                }
+                list.style.display = ''
+                list.innerHTML = '<li>Searching…</li>'
+                try {
+                    const url =
+                        'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' +
+                        encodeURIComponent(q)
+                    const data = await fetch(url, {
+                        headers: { Accept: 'application/json' },
+                    }).then((r) => r.json())
+                    if (!data.length) {
+                        list.innerHTML = '<li>No results</li>'
+                        return
+                    }
+                    list.innerHTML = ''
+                    for (const place of data) {
+                        const li = document.createElement('li')
+                        li.textContent = place.display_name
+                        li.addEventListener('click', () => {
+                            const lat = Number(place.lat)
+                            const lng = Number(place.lon)
+                            $('geo-lat').value = lat.toFixed(6)
+                            $('geo-lng').value = lng.toFixed(6)
+                            if (!$('geo-query').value) {
+                                $('geo-query').value =
+                                    place.name ||
+                                    place.display_name.split(',')[0]
+                            }
+                            if (geoMarker) {
+                                geoMarker.setLatLng([lat, lng])
+                                geoMap.setView([lat, lng], 15)
+                            }
+                            list.style.display = 'none'
+                            render()
+                        })
+                        list.appendChild(li)
+                    }
+                } catch {
+                    list.innerHTML = '<li>Search failed — check your connection</li>'
+                }
+            }
+            $('geo-search-btn').addEventListener('click', geoSearch)
+            $('geo-search').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault()
+                    geoSearch()
+                }
+            })
+
+            // "Use my current location" via the browser Geolocation API.
+            $('geo-locate').addEventListener('click', () => {
+                const btn = $('geo-locate')
+                if (!navigator.geolocation) {
+                    setError('Geolocation is not supported by this browser')
+                    return
+                }
+                const label = btn.textContent
+                btn.disabled = true
+                btn.textContent = 'Locating…'
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude
+                        const lng = pos.coords.longitude
+                        $('geo-lat').value = lat.toFixed(6)
+                        $('geo-lng').value = lng.toFixed(6)
+                        if (geoMarker) {
+                            geoMarker.setLatLng([lat, lng])
+                            geoMap.setView([lat, lng], 15)
+                        }
+                        btn.disabled = false
+                        btn.textContent = label
+                        render()
+                    },
+                    (err) => {
+                        btn.disabled = false
+                        btn.textContent = label
+                        setError(
+                            err.code === err.PERMISSION_DENIED
+                                ? 'Location permission denied'
+                                : 'Could not get your location',
+                        )
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 },
+                )
             })
 
             logoInput.addEventListener('change', () => {
