@@ -561,6 +561,12 @@
                 color: var(--primary-400);
             }
             /* Location map picker */
+            #geo-map-toggle,
+            #geo-locate {
+                display: block;
+                width: 100%;
+                margin-top: 6px;
+            }
             #geo-map {
                 height: 280px;
                 width: 100%;
@@ -1585,6 +1591,9 @@ Hello World!</textarea>
             if (typeof L !== 'undefined') {
                 const img =
                     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/'
+                // Default icon prepends its auto-detected imagePath, which
+                // doubles a full URL; dropping that override uses the URLs as-is.
+                delete L.Icon.Default.prototype._getIconUrl
                 L.Icon.Default.mergeOptions({
                     iconRetinaUrl: img + 'marker-icon-2x.png',
                     iconUrl: img + 'marker-icon.png',
