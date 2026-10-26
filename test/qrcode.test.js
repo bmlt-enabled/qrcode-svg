@@ -362,3 +362,198 @@ describe('image (center logo) option', () => {
         ).not.toThrow()
     })
 })
+
+describe('QRCode.wifi helper', () => {
+    it('builds a WPA network string', () => {
+        expect(QRCode.wifi({ ssid: 'MyNet', password: 'secret' })).toBe(
+            'WIFI:T:WPA;S:MyNet;P:secret;;',
+        )
+    })
+
+    it('defaults to WPA encryption and hidden:false', () => {
+        expect(QRCode.wifi({ ssid: 'Guest' })).toBe('WIFI:T:WPA;S:Guest;P:;;')
+    })
+
+    it('omits the password field for open networks', () => {
+        expect(QRCode.wifi({ ssid: 'Open', encryption: 'nopass' })).toBe(
+            'WIFI:T:nopass;S:Open;;',
+        )
+    })
+
+    it('normalizes WPA2/WPA3 to WPA', () => {
+        expect(QRCode.wifi({ ssid: 'N', password: 'p', encryption: 'WPA2' })).toBe(
+            'WIFI:T:WPA;S:N;P:p;;',
+        )
+    })
+
+    it('supports WEP and the hidden flag', () => {
+        expect(
+            QRCode.wifi({
+                ssid: 'N',
+                password: 'p',
+                encryption: 'WEP',
+                hidden: true,
+            }),
+        ).toBe('WIFI:T:WEP;S:N;P:p;H:true;;')
+    })
+
+    it('escapes special characters in ssid and password', () => {
+        expect(
+            QRCode.wifi({ ssid: 'My;Net\\', password: 'a:b,c"d' }),
+        ).toBe('WIFI:T:WPA;S:My\\;Net\\\\;P:a\\:b\\,c\\"d;;')
+    })
+
+    it('throws without an ssid', () => {
+        expect(() => QRCode.wifi({})).toThrow()
+        expect(() => QRCode.wifi({ ssid: '' })).toThrow()
+    })
+
+    it('throws on an unknown encryption type', () => {
+        expect(() =>
+            QRCode.wifi({ ssid: 'N', password: 'p', encryption: 'foo' }),
+        ).toThrow()
+    })
+
+    it('produces scannable content when rendered', () => {
+        const content = QRCode.wifi({ ssid: 'MyNet', password: 'secret' })
+        const svg = new QRCode({ content, ecl: 'H' }).svg()
+        expect(svg).toMatch(/<svg[\s\S]+<\/svg>/)
+    })
+})
+
+describe('QRCode.tel helper', () => {
+    it('builds a tel: URI and strips formatting', () => {
+        expect(QRCode.tel({ phone: '(555) 123-4567' })).toBe('tel:5551234567')
+        expect(QRCode.tel('+1 555 123 4567')).toBe('tel:+15551234567')
+    })
+
+    it('throws without a phone', () => {
+        expect(() => QRCode.tel({})).toThrow()
+        expect(() => QRCode.tel('')).toThrow()
+    })
+})
+
+describe('QRCode.sms helper', () => {
+    it('builds an SMSTO: URI with and without a message', () => {
+        expect(QRCode.sms({ phone: '+15551234567', message: 'Hi there' })).toBe(
+            'SMSTO:+15551234567:Hi there',
+        )
+        expect(QRCode.sms({ phone: '5551234567' })).toBe('SMSTO:5551234567')
+    })
+
+    it('throws without a phone', () => {
+        expect(() => QRCode.sms({})).toThrow()
+    })
+})
+
+describe('QRCode.email helper', () => {
+    it('builds a mailto: URI with encoded params', () => {
+        expect(
+            QRCode.email({ to: 'a@b.com', subject: 'Hi & bye', body: 'a b' }),
+        ).toBe('mailto:a@b.com?subject=Hi%20%26%20bye&body=a%20b')
+    })
+
+    it('accepts a bare address string', () => {
+        expect(QRCode.email('a@b.com')).toBe('mailto:a@b.com')
+    })
+
+    it('throws without a recipient', () => {
+        expect(() => QRCode.email({})).toThrow()
+    })
+})
+
+describe('QRCode.geo helper', () => {
+    it('builds a geo: URI', () => {
+        expect(QRCode.geo({ latitude: 38.898, longitude: -77.037 })).toBe(
+            'geo:38.898,-77.037',
+        )
+    })
+
+    it('appends an encoded query label', () => {
+        expect(
+            QRCode.geo({ latitude: 1, longitude: 2, query: 'My Office' }),
+        ).toBe('geo:1,2?q=My%20Office')
+    })
+
+    it('throws on non-numeric coordinates', () => {
+        expect(() => QRCode.geo({ latitude: 'x', longitude: 2 })).toThrow()
+    })
+})
+
+describe('QRCode.vcard helper', () => {
+    it('builds a vCard with name, phone and email', () => {
+        const out = QRCode.vcard({
+            firstName: 'Jane',
+            lastName: 'Doe',
+            phone: '+15551234567',
+            email: 'jane@example.com',
+        })
+        expect(out).toContain('BEGIN:VCARD')
+        expect(out).toContain('VERSION:3.0')
+        expect(out).toContain('N:Doe;Jane;;;')
+        expect(out).toContain('FN:Jane Doe')
+        expect(out).toContain('TEL;TYPE=CELL:+15551234567')
+        expect(out).toContain('EMAIL:jane@example.com')
+        expect(out).toContain('END:VCARD')
+    })
+
+    it('supports multiple phones and escapes special characters', () => {
+        const out = QRCode.vcard({
+            fullName: 'A; B, C',
+            phone: ['111', '222'],
+        })
+        expect(out).toContain('FN:A\\; B\\, C')
+        expect(out.match(/TEL;TYPE=CELL:/g).length).toBe(2)
+    })
+
+    it('throws without a name', () => {
+        expect(() => QRCode.vcard({})).toThrow()
+    })
+})
+
+describe('QRCode.mecard helper', () => {
+    it('builds a MeCard string', () => {
+        expect(
+            QRCode.mecard({
+                firstName: 'Jane',
+                lastName: 'Doe',
+                phone: '+15551234567',
+                email: 'jane@example.com',
+            }),
+        ).toBe('MECARD:N:Doe,Jane;TEL:+15551234567;EMAIL:jane@example.com;;')
+    })
+
+    it('throws without a name', () => {
+        expect(() => QRCode.mecard({})).toThrow()
+    })
+})
+
+describe('QRCode.event helper', () => {
+    it('builds a VEVENT with a UTC Date', () => {
+        const start = new Date(Date.UTC(2026, 10, 1, 19, 0, 0))
+        const end = new Date(Date.UTC(2026, 10, 1, 20, 30, 0))
+        const out = QRCode.event({
+            title: 'NA Meeting',
+            start,
+            end,
+            location: 'Main St',
+        })
+        expect(out).toContain('BEGIN:VEVENT')
+        expect(out).toContain('SUMMARY:NA Meeting')
+        expect(out).toContain('DTSTART:20261101T190000Z')
+        expect(out).toContain('DTEND:20261101T203000Z')
+        expect(out).toContain('LOCATION:Main St')
+        expect(out).toContain('END:VEVENT')
+    })
+
+    it('passes a preformatted start string through', () => {
+        expect(
+            QRCode.event({ title: 'X', start: '20261101T190000Z' }),
+        ).toContain('DTSTART:20261101T190000Z')
+    })
+
+    it('throws without a title or start', () => {
+        expect(() => QRCode.event({ start: new Date() })).toThrow()
+        expect(() => QRCode.event({ title: 'X' })).toThrow()
+    })
+})

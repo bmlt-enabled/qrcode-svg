@@ -1829,4 +1829,260 @@ QRCode.prototype.svg = function (opt) {
     return svg
 }
 
+/**
+ * Build the content string for a Wi-Fi network QR code, following the
+ * `WIFI:` URI scheme that iOS and Android cameras understand. Pass the
+ * result as the `content` of a QRCode (use a higher `ecl`, e.g. 'H', when
+ * the password is long). Special characters are escaped per the scheme.
+ *
+ * @param {Object} opts
+ * @param {string} opts.ssid - Network name (required).
+ * @param {string} [opts.password] - Network password (omit for open networks).
+ * @param {('WPA'|'WEP'|'nopass')} [opts.encryption] - Auth type; 'WPA' covers
+ *        WPA/WPA2/WPA3. Default: 'WPA'.
+ * @param {boolean} [opts.hidden] - Whether the SSID is hidden. Default: false.
+ * @returns {string} e.g. `WIFI:T:WPA;S:MyNet;P:secret;;`
+ */
+QRCode.wifi = function (opts) {
+    opts = opts || {}
+    if (typeof opts.ssid !== 'string' || opts.ssid.length === 0) {
+        throw new Error('wifi: "ssid" is required')
+    }
+
+    //Escape the characters that are special in the WIFI: scheme.
+    const esc = (s) => String(s).replace(/([\\;,:"])/g, '\\$1')
+
+    const password = opts.password ?? ''
+    const hidden = opts.hidden ?? false
+    let type = (opts.encryption ?? 'WPA').toUpperCase()
+    if (type === 'WPA2' || type === 'WPA3' || type === 'WPA/WPA2') {
+        type = 'WPA'
+    }
+    if (type !== 'WPA' && type !== 'WEP' && type !== 'NOPASS') {
+        throw new Error('wifi: "encryption" must be WPA, WEP or nopass')
+    }
+    if (type === 'NOPASS') type = 'nopass'
+
+    let out = 'WIFI:T:' + type + ';S:' + esc(opts.ssid) + ';'
+    if (type !== 'nopass') {
+        out += 'P:' + esc(password) + ';'
+    }
+    if (hidden) {
+        out += 'H:true;'
+    }
+    return out + ';'
+}
+
+//Keep only characters that are valid in a dialable number (digits, a leading
+//`+`, and the DTMF/pause characters). Spaces, dashes and parentheses are dropped.
+function sanitizePhone(value) {
+    return String(value).replace(/[^+\d#*,;]/g, '')
+}
+
+/**
+ * Build the content for a "call this number" QR code (`tel:` URI).
+ *
+ * @param {Object|string} opts - `{ phone }`, or the number as a string.
+ * @param {string} opts.phone - Phone number (required).
+ * @returns {string} e.g. `tel:+15551234567`
+ */
+QRCode.tel = function (opts) {
+    const phone = typeof opts === 'string' ? opts : (opts && opts.phone)
+    if (!phone) throw new Error('tel: "phone" is required')
+    return 'tel:' + sanitizePhone(phone)
+}
+
+/**
+ * Build the content for a "send a text" QR code (`SMSTO:` scheme, the most
+ * widely supported form).
+ *
+ * @param {Object} opts
+ * @param {string} opts.phone - Recipient number (required).
+ * @param {string} [opts.message] - Pre-filled message body.
+ * @returns {string} e.g. `SMSTO:+15551234567:Hi there`
+ */
+QRCode.sms = function (opts) {
+    opts = opts || {}
+    if (!opts.phone) throw new Error('sms: "phone" is required')
+    const out = 'SMSTO:' + sanitizePhone(opts.phone)
+    return opts.message ? out + ':' + opts.message : out
+}
+
+/**
+ * Build the content for a "compose an email" QR code (`mailto:` URI).
+ *
+ * @param {Object|string} opts - `{ to, subject, body, cc, bcc }`, or the
+ *        address as a string.
+ * @param {string} opts.to - Recipient address (required).
+ * @param {string} [opts.subject]
+ * @param {string} [opts.body]
+ * @param {string} [opts.cc]
+ * @param {string} [opts.bcc]
+ * @returns {string} e.g. `mailto:a@b.com?subject=Hi&body=...`
+ */
+QRCode.email = function (opts) {
+    if (typeof opts === 'string') opts = { to: opts }
+    opts = opts || {}
+    if (!opts.to) throw new Error('email: "to" is required')
+    const params = []
+    if (opts.cc) params.push('cc=' + encodeURIComponent(opts.cc))
+    if (opts.bcc) params.push('bcc=' + encodeURIComponent(opts.bcc))
+    if (opts.subject) params.push('subject=' + encodeURIComponent(opts.subject))
+    if (opts.body) params.push('body=' + encodeURIComponent(opts.body))
+    let out = 'mailto:' + opts.to
+    if (params.length) out += '?' + params.join('&')
+    return out
+}
+
+/**
+ * Build the content for a "open in maps" QR code (`geo:` URI).
+ *
+ * @param {Object} opts
+ * @param {number} opts.latitude - Latitude (required).
+ * @param {number} opts.longitude - Longitude (required).
+ * @param {string} [opts.query] - Optional label/search term for the pin.
+ * @returns {string} e.g. `geo:38.898,-77.037?q=Office`
+ */
+QRCode.geo = function (opts) {
+    opts = opts || {}
+    const lat = Number(opts.latitude)
+    const lng = Number(opts.longitude)
+    if (!isFinite(lat) || !isFinite(lng)) {
+        throw new Error('geo: numeric "latitude" and "longitude" are required')
+    }
+    let out = 'geo:' + lat + ',' + lng
+    if (opts.query) out += '?q=' + encodeURIComponent(opts.query)
+    return out
+}
+
+/**
+ * Build the content for an "add contact" QR code in vCard 3.0 format.
+ *
+ * @param {Object} opts
+ * @param {string} [opts.firstName]
+ * @param {string} [opts.lastName]
+ * @param {string} [opts.fullName] - Falls back to "firstName lastName".
+ * @param {string} [opts.organization]
+ * @param {string} [opts.title]
+ * @param {string|string[]} [opts.phone] - One or more phone numbers.
+ * @param {string|string[]} [opts.email] - One or more email addresses.
+ * @param {string} [opts.url]
+ * @param {string} [opts.address]
+ * @param {string} [opts.note]
+ * @returns {string} A `BEGIN:VCARD … END:VCARD` string.
+ */
+QRCode.vcard = function (opts) {
+    opts = opts || {}
+    const esc = (s) =>
+        String(s)
+            .replace(/([\\,;])/g, '\\$1')
+            .replace(/\r?\n/g, '\\n')
+    const first = opts.firstName ?? ''
+    const last = opts.lastName ?? ''
+    const full =
+        opts.fullName ?? [first, last].filter(Boolean).join(' ').trim()
+    if (!full && !first && !last) {
+        throw new Error(
+            'vcard: a name ("firstName"/"lastName" or "fullName") is required',
+        )
+    }
+    const lines = ['BEGIN:VCARD', 'VERSION:3.0']
+    lines.push('N:' + esc(last) + ';' + esc(first) + ';;;')
+    lines.push('FN:' + esc(full || [first, last].filter(Boolean).join(' ')))
+    if (opts.organization) lines.push('ORG:' + esc(opts.organization))
+    if (opts.title) lines.push('TITLE:' + esc(opts.title))
+    for (const t of [].concat(opts.phone ?? []).filter(Boolean)) {
+        lines.push('TEL;TYPE=CELL:' + esc(t))
+    }
+    for (const e of [].concat(opts.email ?? []).filter(Boolean)) {
+        lines.push('EMAIL:' + esc(e))
+    }
+    if (opts.url) lines.push('URL:' + esc(opts.url))
+    if (opts.address) lines.push('ADR;TYPE=HOME:;;' + esc(opts.address) + ';;;;')
+    if (opts.note) lines.push('NOTE:' + esc(opts.note))
+    lines.push('END:VCARD')
+    return lines.join('\r\n')
+}
+
+/**
+ * Build the content for an "add contact" QR code in MeCard format (shorter
+ * than vCard; handled well by Android).
+ *
+ * @param {Object} opts - Same fields as {@link QRCode.vcard}.
+ * @returns {string} e.g. `MECARD:N:Doe,Jane;TEL:+1555;EMAIL:j@x.com;;`
+ */
+QRCode.mecard = function (opts) {
+    opts = opts || {}
+    const esc = (s) => String(s).replace(/([\\;,:])/g, '\\$1')
+    const first = opts.firstName ?? ''
+    const last = opts.lastName ?? ''
+    if (!first && !last && !opts.fullName) {
+        throw new Error(
+            'mecard: a name ("firstName"/"lastName" or "fullName") is required',
+        )
+    }
+    const parts = []
+    if (opts.fullName && !first && !last) {
+        parts.push('N:' + esc(opts.fullName))
+    } else {
+        parts.push('N:' + esc(last) + ',' + esc(first))
+    }
+    for (const t of [].concat(opts.phone ?? []).filter(Boolean)) {
+        parts.push('TEL:' + esc(t))
+    }
+    for (const e of [].concat(opts.email ?? []).filter(Boolean)) {
+        parts.push('EMAIL:' + esc(e))
+    }
+    if (opts.url) parts.push('URL:' + esc(opts.url))
+    if (opts.organization) parts.push('ORG:' + esc(opts.organization))
+    if (opts.address) parts.push('ADR:' + esc(opts.address))
+    if (opts.note) parts.push('NOTE:' + esc(opts.note))
+    return 'MECARD:' + parts.join(';') + ';;'
+}
+
+/**
+ * Build the content for an "add to calendar" QR code (iCalendar VEVENT).
+ *
+ * @param {Object} opts
+ * @param {string} opts.title - Event title/summary (required).
+ * @param {Date|string} opts.start - Start time (required). A Date is formatted
+ *        as UTC; a string is used as-is (e.g. `20261101T190000Z`).
+ * @param {Date|string} [opts.end] - End time.
+ * @param {string} [opts.location]
+ * @param {string} [opts.description]
+ * @returns {string} A `BEGIN:VEVENT … END:VEVENT` string.
+ */
+QRCode.event = function (opts) {
+    opts = opts || {}
+    const title = opts.title ?? opts.summary
+    if (!title) throw new Error('event: "title" is required')
+    if (!opts.start) throw new Error('event: "start" is required')
+    const esc = (s) =>
+        String(s)
+            .replace(/([\\,;])/g, '\\$1')
+            .replace(/\r?\n/g, '\\n')
+    const fmt = (d) => {
+        if (!(d instanceof Date)) return String(d)
+        const p = (n) => String(n).padStart(2, '0')
+        return (
+            d.getUTCFullYear() +
+            p(d.getUTCMonth() + 1) +
+            p(d.getUTCDate()) +
+            'T' +
+            p(d.getUTCHours()) +
+            p(d.getUTCMinutes()) +
+            p(d.getUTCSeconds()) +
+            'Z'
+        )
+    }
+    const lines = ['BEGIN:VEVENT']
+    lines.push('SUMMARY:' + esc(title))
+    lines.push('DTSTART:' + fmt(opts.start))
+    if (opts.end) lines.push('DTEND:' + fmt(opts.end))
+    if (opts.location) lines.push('LOCATION:' + esc(opts.location))
+    if (opts.description) lines.push('DESCRIPTION:' + esc(opts.description))
+    lines.push('END:VEVENT')
+    return lines.join('\r\n')
+}
+
 export default QRCode

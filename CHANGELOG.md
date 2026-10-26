@@ -26,7 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`frameFill` option.** For `frameShape: 'triangle'`, controls how much of the
   available space the code fills (`0`–`1`, default `0.94`); `1` pushes the code
   right up to the triangle's sides and base.
-- **Playground controls.** The example app (`examples/`) gained **Outer Shape**,
+- **Content helpers.** Static methods that build the `content` string for the
+  common QR payload types phone cameras act on, with each format's special
+  characters escaped:
+  - `QRCode.wifi()` — join a Wi-Fi network (`WIFI:`)
+  - `QRCode.tel()` — call a number (`tel:`)
+  - `QRCode.sms()` — send a text (`SMSTO:`)
+  - `QRCode.email()` — compose an email (`mailto:`)
+  - `QRCode.geo()` — open a location in maps (`geo:`)
+  - `QRCode.vcard()` / `QRCode.mecard()` — add a contact (vCard 3.0 / MeCard)
+  - `QRCode.event()` — add a calendar event (iCalendar VEVENT)
+- **Playground controls.** The example app (`examples/`) gained a **Type**
+  selector exposing all of the above (Text / URL, Wi-Fi, Phone, SMS, Email,
+  Location, Contact vCard/MeCard, Calendar event), plus **Outer Shape**,
   **Module Shape** and a **Code Fill** slider (shown for the triangle frame).
 
 ### Notes

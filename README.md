@@ -179,6 +179,66 @@ logo by default so it stays legible against the modules. The logo is emitted as
 an `<image>` element in the SVG, so it is included in any PNG you rasterize from
 it. The `path-data` container ignores `image` (it returns path data only).
 
+### Wi-Fi QR codes
+
+A Wi-Fi QR code (the kind that lets a guest join your network by pointing their
+camera at it) is just a normal QR code whose **content** uses the `WIFI:` URI
+scheme. `QRCode.wifi()` builds that string for you, escaping any special
+characters:
+
+```javascript
+const content = QRCode.wifi({
+    ssid: 'Guest WiFi',
+    password: 's3cr3t!',
+    encryption: 'WPA', // 'WPA' (covers WPA/WPA2/WPA3), 'WEP', or 'nopass'; default 'WPA'
+    hidden: false, // default false; set true if the SSID is not broadcast
+})
+// => "WIFI:T:WPA;S:Guest WiFi;P:s3cr3t!;;"
+
+const svg = new QRCode({ content, ecl: 'H' }).svg()
+```
+
+`ssid` is the only required field — `encryption` defaults to `'WPA'` and
+`hidden` to `false`. For an open network, pass `encryption: 'nopass'`. iOS and
+Android cameras recognize the result and prompt to join the network.
+
+### Other content helpers
+
+The same pattern applies to the other formats phone cameras act on. Each helper
+returns a `content` string you pass to a `QRCode`:
+
+```javascript
+QRCode.tel('+15551234567') // => "tel:+15551234567"
+QRCode.sms({ phone: '+15551234567', message: 'Hi' }) // => "SMSTO:+15551234567:Hi"
+QRCode.email({ to: 'a@b.com', subject: 'Hello', body: 'Hi there' })
+QRCode.geo({ latitude: 38.898, longitude: -77.037, query: 'Meeting' })
+
+// Contact card — vCard (widely supported) or MeCard (shorter)
+QRCode.vcard({
+    firstName: 'Jane',
+    lastName: 'Doe',
+    phone: '+15551234567', // or an array of numbers
+    email: 'jane@example.com',
+    organization: 'Acme',
+    url: 'https://example.com',
+})
+QRCode.mecard({ firstName: 'Jane', lastName: 'Doe', phone: '+15551234567' })
+
+// Calendar event (a Date is formatted as UTC; a string is used as-is)
+QRCode.event({
+    title: 'NA Meeting',
+    start: new Date('2026-11-01T19:00:00Z'),
+    end: new Date('2026-11-01T20:00:00Z'),
+    location: '123 Main St',
+})
+
+const svg = new QRCode({ content: QRCode.vcard({ firstName: 'Jane' }), ecl: 'H' }).svg()
+```
+
+`phone` and `email` on `vcard`/`mecard` accept a single string or an array.
+Special characters are escaped for every format. The example app (`examples/`)
+exposes all of these through its **Type** selector.
+
 ## Usage in the browser
 
 ```html

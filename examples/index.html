@@ -644,6 +644,21 @@
                         <h2>Configuration</h2>
 
                         <div class="field">
+                            <label for="content-type">Type</label>
+                            <select class="select" id="content-type">
+                                <option value="text" selected>Text / URL</option>
+                                <option value="wifi">Wi-Fi network</option>
+                                <option value="tel">Phone number</option>
+                                <option value="sms">SMS message</option>
+                                <option value="email">Email</option>
+                                <option value="geo">Location (map)</option>
+                                <option value="vcard">Contact (vCard)</option>
+                                <option value="mecard">Contact (MeCard)</option>
+                                <option value="event">Calendar event</option>
+                            </select>
+                        </div>
+
+                        <div class="field" id="content-field">
                             <label for="content">Content</label>
                             <textarea
                                 class="textarea"
@@ -654,6 +669,267 @@ Hello World!</textarea>
                             <span class="hint"
                                 >Text, URL, or any string to encode</span
                             >
+                        </div>
+
+                        <div id="wifi-fields" style="display: none">
+                            <div class="field">
+                                <label for="wifi-ssid"
+                                    >Wi-Fi SSID (network name)</label
+                                >
+                                <input
+                                    class="input"
+                                    id="wifi-ssid"
+                                    type="text"
+                                    placeholder="Guest WiFi"
+                                />
+                            </div>
+                            <div class="row">
+                                <div class="field">
+                                    <label for="wifi-encryption"
+                                        >Security</label
+                                    >
+                                    <select
+                                        class="select"
+                                        id="wifi-encryption"
+                                    >
+                                        <option value="WPA" selected>
+                                            WPA/WPA2/WPA3
+                                        </option>
+                                        <option value="WEP">WEP</option>
+                                        <option value="nopass">
+                                            None (open)
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="wifi-password">Password</label>
+                                    <input
+                                        class="input"
+                                        id="wifi-password"
+                                        type="text"
+                                        placeholder="Network password"
+                                    />
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 8px;
+                                    "
+                                >
+                                    <input id="wifi-hidden" type="checkbox" />
+                                    Hidden network
+                                </label>
+                                <span class="hint"
+                                    >Scan with the phone camera to join the
+                                    network. Uses <code>ecl: 'H'</code> so it
+                                    stays reliable.</span
+                                >
+                            </div>
+                        </div>
+
+                        <div id="tel-fields" style="display: none">
+                            <div class="field">
+                                <label for="tel-phone">Phone number</label>
+                                <input
+                                    class="input"
+                                    id="tel-phone"
+                                    type="tel"
+                                    placeholder="+1 555 123 4567"
+                                />
+                            </div>
+                        </div>
+
+                        <div id="sms-fields" style="display: none">
+                            <div class="field">
+                                <label for="sms-phone">Phone number</label>
+                                <input
+                                    class="input"
+                                    id="sms-phone"
+                                    type="tel"
+                                    placeholder="+1 555 123 4567"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="sms-message">Message</label>
+                                <input
+                                    class="input"
+                                    id="sms-message"
+                                    type="text"
+                                    placeholder="Pre-filled text (optional)"
+                                />
+                            </div>
+                        </div>
+
+                        <div id="email-fields" style="display: none">
+                            <div class="field">
+                                <label for="email-to">To</label>
+                                <input
+                                    class="input"
+                                    id="email-to"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="email-subject">Subject</label>
+                                <input
+                                    class="input"
+                                    id="email-subject"
+                                    type="text"
+                                    placeholder="Optional"
+                                />
+                            </div>
+                            <div class="field">
+                                <label for="email-body">Body</label>
+                                <textarea
+                                    class="textarea"
+                                    id="email-body"
+                                    placeholder="Optional"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div id="geo-fields" style="display: none">
+                            <div class="row">
+                                <div class="field">
+                                    <label for="geo-lat">Latitude</label>
+                                    <input
+                                        class="input"
+                                        id="geo-lat"
+                                        type="number"
+                                        step="any"
+                                        placeholder="38.898"
+                                    />
+                                </div>
+                                <div class="field">
+                                    <label for="geo-lng">Longitude</label>
+                                    <input
+                                        class="input"
+                                        id="geo-lng"
+                                        type="number"
+                                        step="any"
+                                        placeholder="-77.037"
+                                    />
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="geo-query">Label</label>
+                                <input
+                                    class="input"
+                                    id="geo-query"
+                                    type="text"
+                                    placeholder="Pin label (optional)"
+                                />
+                            </div>
+                        </div>
+
+                        <div id="contact-fields" style="display: none">
+                            <div class="row">
+                                <div class="field">
+                                    <label for="contact-first"
+                                        >First name</label
+                                    >
+                                    <input
+                                        class="input"
+                                        id="contact-first"
+                                        type="text"
+                                        placeholder="Jane"
+                                    />
+                                </div>
+                                <div class="field">
+                                    <label for="contact-last">Last name</label>
+                                    <input
+                                        class="input"
+                                        id="contact-last"
+                                        type="text"
+                                        placeholder="Doe"
+                                    />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="field">
+                                    <label for="contact-phone">Phone</label>
+                                    <input
+                                        class="input"
+                                        id="contact-phone"
+                                        type="tel"
+                                        placeholder="+1 555 123 4567"
+                                    />
+                                </div>
+                                <div class="field">
+                                    <label for="contact-email">Email</label>
+                                    <input
+                                        class="input"
+                                        id="contact-email"
+                                        type="email"
+                                        placeholder="jane@example.com"
+                                    />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="field">
+                                    <label for="contact-org"
+                                        >Organization</label
+                                    >
+                                    <input
+                                        class="input"
+                                        id="contact-org"
+                                        type="text"
+                                        placeholder="Optional"
+                                    />
+                                </div>
+                                <div class="field">
+                                    <label for="contact-url">Website</label>
+                                    <input
+                                        class="input"
+                                        id="contact-url"
+                                        type="url"
+                                        placeholder="Optional"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="event-fields" style="display: none">
+                            <div class="field">
+                                <label for="event-title">Title</label>
+                                <input
+                                    class="input"
+                                    id="event-title"
+                                    type="text"
+                                    placeholder="NA Meeting"
+                                />
+                            </div>
+                            <div class="row">
+                                <div class="field">
+                                    <label for="event-start">Starts</label>
+                                    <input
+                                        class="input"
+                                        id="event-start"
+                                        type="datetime-local"
+                                    />
+                                </div>
+                                <div class="field">
+                                    <label for="event-end">Ends</label>
+                                    <input
+                                        class="input"
+                                        id="event-end"
+                                        type="datetime-local"
+                                    />
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="event-location">Location</label>
+                                <input
+                                    class="input"
+                                    id="event-location"
+                                    type="text"
+                                    placeholder="Optional"
+                                />
+                            </div>
                         </div>
 
                         <div class="row">
@@ -953,6 +1229,24 @@ Hello World!</textarea>
             const frameFill = document.getElementById('frame-fill')
             const frameFillVal = document.getElementById('frame-fill-val')
             const frameFillRow = document.getElementById('frame-fill-row')
+            const contentType = document.getElementById('content-type')
+            const contentField = document.getElementById('content-field')
+            const wifiFields = document.getElementById('wifi-fields')
+            const wifiSsid = document.getElementById('wifi-ssid')
+            const wifiEncryption = document.getElementById('wifi-encryption')
+            const wifiPassword = document.getElementById('wifi-password')
+            const wifiHidden = document.getElementById('wifi-hidden')
+            const $ = (id) => document.getElementById(id)
+            // Field blocks per content type (text/wifi handled separately).
+            const typeBlocks = {
+                tel: $('tel-fields'),
+                sms: $('sms-fields'),
+                email: $('email-fields'),
+                geo: $('geo-fields'),
+                vcard: $('contact-fields'),
+                mecard: $('contact-fields'),
+                event: $('event-fields'),
+            }
             let logoDataUrl = null
             const chipColor = document.getElementById('chip-color')
             const chipBg = document.getElementById('chip-background')
@@ -964,7 +1258,7 @@ Hello World!</textarea>
             const statBytes = document.getElementById('stat-bytes')
             const metaStatus = document.getElementById('meta-status')
 
-            function syncChrome() {
+            function syncChrome(content) {
                 chipColor.style.background = fields.color.value
                 chipBg.style.background = fields.background.value
                 hexColor.textContent = fields.color.value.toUpperCase()
@@ -973,11 +1267,122 @@ Hello World!</textarea>
                 const h = Number(fields.height.value) || 256
                 statSize.textContent = `${w} × ${h}`
                 statEcl.textContent = fields.ecl.value
-                statChars.textContent = fields.content.value.length
-                statBytes.textContent = new Blob([fields.content.value]).size
+                statChars.textContent = content.length
+                statBytes.textContent = new Blob([content]).size
                 frameFillRow.style.display =
                     fields.frameShape.value === 'triangle' ? '' : 'none'
                 frameFillVal.textContent = `${frameFill.value}%`
+            }
+
+            // Returns { content } or { error } for the current input mode.
+            // The QRCode.* helpers throw when a required field is missing, so
+            // the whole switch is wrapped and the message surfaced inline.
+            function buildContent() {
+                const type = contentType.value
+                try {
+                    switch (type) {
+                        case 'wifi': {
+                            if (!wifiSsid.value)
+                                return { error: 'Wi-Fi SSID is required' }
+                            return {
+                                content: QRCode.wifi({
+                                    ssid: wifiSsid.value,
+                                    password: wifiPassword.value,
+                                    encryption: wifiEncryption.value,
+                                    hidden: wifiHidden.checked,
+                                }),
+                            }
+                        }
+                        case 'tel': {
+                            if (!$('tel-phone').value)
+                                return { error: 'Phone number is required' }
+                            return {
+                                content: QRCode.tel({
+                                    phone: $('tel-phone').value,
+                                }),
+                            }
+                        }
+                        case 'sms': {
+                            if (!$('sms-phone').value)
+                                return { error: 'Phone number is required' }
+                            return {
+                                content: QRCode.sms({
+                                    phone: $('sms-phone').value,
+                                    message: $('sms-message').value,
+                                }),
+                            }
+                        }
+                        case 'email': {
+                            if (!$('email-to').value)
+                                return { error: 'A recipient is required' }
+                            return {
+                                content: QRCode.email({
+                                    to: $('email-to').value,
+                                    subject: $('email-subject').value,
+                                    body: $('email-body').value,
+                                }),
+                            }
+                        }
+                        case 'geo': {
+                            if (!$('geo-lat').value || !$('geo-lng').value)
+                                return {
+                                    error: 'Latitude and longitude are required',
+                                }
+                            return {
+                                content: QRCode.geo({
+                                    latitude: $('geo-lat').value,
+                                    longitude: $('geo-lng').value,
+                                    query: $('geo-query').value,
+                                }),
+                            }
+                        }
+                        case 'vcard':
+                        case 'mecard': {
+                            const first = $('contact-first').value
+                            const last = $('contact-last').value
+                            if (!first && !last)
+                                return { error: 'A name is required' }
+                            const data = {
+                                firstName: first,
+                                lastName: last,
+                                phone: $('contact-phone').value || undefined,
+                                email: $('contact-email').value || undefined,
+                                organization:
+                                    $('contact-org').value || undefined,
+                                url: $('contact-url').value || undefined,
+                            }
+                            return {
+                                content:
+                                    type === 'vcard'
+                                        ? QRCode.vcard(data)
+                                        : QRCode.mecard(data),
+                            }
+                        }
+                        case 'event': {
+                            if (!$('event-title').value)
+                                return { error: 'A title is required' }
+                            if (!$('event-start').value)
+                                return { error: 'A start time is required' }
+                            return {
+                                content: QRCode.event({
+                                    title: $('event-title').value,
+                                    start: new Date($('event-start').value),
+                                    end: $('event-end').value
+                                        ? new Date($('event-end').value)
+                                        : undefined,
+                                    location: $('event-location').value,
+                                }),
+                            }
+                        }
+                        default: {
+                            if (!fields.content.value)
+                                return { error: 'Content is required' }
+                            return { content: fields.content.value }
+                        }
+                    }
+                } catch (err) {
+                    return { error: err.message || String(err) }
+                }
             }
 
             function setError(msg) {
@@ -993,13 +1398,25 @@ Hello World!</textarea>
             }
 
             function render() {
-                syncChrome()
-                const content = fields.content.value
-                if (!content) {
+                // Show only the field block for the selected type. vcard and
+                // mecard share one block, so hide every block then show the
+                // active one (a plain key===type loop would re-hide it).
+                const type = contentType.value
+                contentField.style.display = type === 'text' ? '' : 'none'
+                wifiFields.style.display = type === 'wifi' ? '' : 'none'
+                const activeBlock = typeBlocks[type]
+                for (const block of new Set(Object.values(typeBlocks))) {
+                    block.style.display = block === activeBlock ? '' : 'none'
+                }
+
+                const built = buildContent()
+                syncChrome(built.content || '')
+                if (built.error) {
                     container.innerHTML = ''
-                    setError('Content is required')
+                    setError(built.error)
                     return
                 }
+                const content = built.content
                 try {
                     const qrcode = new QRCode({
                         content,
@@ -1030,6 +1447,31 @@ Hello World!</textarea>
             for (const el of Object.values(fields)) {
                 el.addEventListener('input', render)
             }
+
+            // Wi-Fi inputs plus every structured-type field drive the render.
+            const typedInputs = new Set([
+                wifiSsid,
+                wifiEncryption,
+                wifiPassword,
+                wifiHidden,
+            ])
+            for (const block of Object.values(typeBlocks)) {
+                for (const el of block.querySelectorAll(
+                    'input, select, textarea',
+                )) {
+                    typedInputs.add(el)
+                }
+            }
+            for (const el of typedInputs) {
+                el.addEventListener('input', render)
+            }
+            // Structured types tend to be longer; H keeps them reliable.
+            const compactTypes = new Set(['text', 'tel', 'geo'])
+            contentType.addEventListener('change', () => {
+                if (!compactTypes.has(contentType.value))
+                    fields.ecl.value = 'H'
+                render()
+            })
 
             logoInput.addEventListener('change', () => {
                 const file = logoInput.files && logoInput.files[0]
