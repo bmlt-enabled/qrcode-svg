@@ -78,11 +78,12 @@ describe('round-trip decoding', () => {
         ).toBe(content)
     })
 
-    // Review #7: square/circle/rounded modules decode reliably. diamond and
-    // triangle are a known decode-reliability gap and are intentionally not
-    // asserted here — see the review notes before relying on them.
+    // Review #7: every module style must decode. diamond/triangle only became
+    // reliable once functional patterns (finders, timing, alignment) were kept
+    // square — these assertions guard against that regressing.
     describe('module styles', () => {
-        for (const moduleShape of ['square', 'circle', 'rounded']) {
+        const shapes = ['square', 'circle', 'rounded', 'diamond', 'triangle']
+        for (const moduleShape of shapes) {
             it(`decodes ${moduleShape} modules`, async () => {
                 const content = 'https://bmlt.app'
                 expect(await decode({ content, ecl: 'H', moduleShape })).toBe(
@@ -99,6 +100,18 @@ describe('round-trip decoding', () => {
                         join: true,
                     }),
                 ).toBe(content)
+            })
+        }
+
+        // A longer payload forces a higher version with alignment patterns,
+        // which must also stay square for diamond/triangle to decode.
+        for (const moduleShape of ['diamond', 'triangle']) {
+            it(`decodes ${moduleShape} modules in a larger (v3+) code`, async () => {
+                const content =
+                    'https://bmlt.app/meetings?lat=40.7128&lng=-74.0060&radius=25 — NA meeting finder'
+                expect(await decode({ content, ecl: 'H', moduleShape })).toBe(
+                    content,
+                )
             })
         }
     })

@@ -49,7 +49,7 @@ const svg = qrcode.svg()
 - **background** - color of background, color name or hex string, e.g. `white`
 - **ecl** - error correction level: `L`, `M`, `Q`, `H`
 - **join** - join modules (squares) into one shape, into the SVG `path` element, **recommended** for web and responsive use, default: `false`
-- **moduleShape** - shape of the data modules: `square` (default), `diamond` (square-on-point, NA style), `triangle` (AA style), `circle` (dots), or `rounded` (rounded squares). The finder patterns (the three corner squares) always stay square so scanners lock on reliably; use a higher `ecl` (e.g. `H`) for best results
+- **moduleShape** - shape of the data modules: `square` (default), `diamond` (square-on-point, NA style), `triangle` (AA style), `circle` (dots), or `rounded` (rounded squares). The functional patterns (finders, timing and alignment) always stay square so scanners lock on reliably; use a higher `ecl` (e.g. `H`) for best results
 - **frameShape** - overall image (outer box) shape: `square` (default), `diamond` (rotates the whole code 45° to stand on-point, NA style), or `triangle` (nests the square code inside an outlined triangle, AA style). The scannable data matrix always stays square; applies to the `svg`, `svg-viewbox` and `g` containers. Use a higher `ecl` (e.g. `H`) for best results
 - **frameFill** - for `frameShape: 'triangle'`, how much of the available space the code fills (`0`–`1`), default `0.94`. `1` pushes the code right up to the triangle's sides and base; lower values pull it in
 - **predefined** - to create a squares as pattern, then populate the canvas, default: `false`, see the output examples below

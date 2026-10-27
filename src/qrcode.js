@@ -1440,10 +1440,35 @@ QRCode.prototype.svg = function (opt) {
     //can reliably lock on.
     const moduleShape = (options.moduleShape || 'square').toLowerCase()
     const stylized = moduleShape !== 'square'
-    const inFinder = (x, y) =>
+    // Functional patterns must stay square so a scanner can lock onto the
+    // module grid; only data modules take the decorative shape. This covers the
+    // three finders, the timing patterns (row/column 6) and every alignment
+    // pattern. Stylizing these (as earlier versions did) breaks decoding for
+    // the diamond and triangle module shapes.
+    const alignPos = QRUtil.getPatternPosition(this.qrcode.typeNumber) || []
+    const inAlign = (x, y) => {
+        for (const r of alignPos) {
+            for (const c of alignPos) {
+                // Skip alignment centers that coincide with the finders.
+                if (
+                    (r <= 6 && c <= 6) ||
+                    (r <= 6 && c >= length - 7) ||
+                    (r >= length - 7 && c <= 6)
+                ) {
+                    continue
+                }
+                if (Math.abs(x - c) <= 2 && Math.abs(y - r) <= 2) return true
+            }
+        }
+        return false
+    }
+    const inFunctional = (x, y) =>
         (x < 7 && y < 7) ||
         (x >= length - 7 && y < 7) ||
-        (x < 7 && y >= length - 7)
+        (x < 7 && y >= length - 7) ||
+        x === 6 ||
+        y === 6 ||
+        inAlign(x, y)
     const rendering = stylized ? 'geometricPrecision' : 'crispEdges'
     const fmtN = (n) => (Number.isInteger(n) ? Number(n) : Number(n.toFixed(2)))
     //SVG path 'd' for one module whose top-left corner is (px, py).
@@ -1551,7 +1576,7 @@ QRCode.prototype.svg = function (opt) {
                 }
 
                 const shape =
-                    stylized && inFinder(x, y) ? 'square' : moduleShape
+                    stylized && inFunctional(x, y) ? 'square' : moduleShape
 
                 if (join && shape !== 'square') {
                     //Stylized module as svg path data

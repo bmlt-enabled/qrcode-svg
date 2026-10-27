@@ -20,8 +20,9 @@ export interface QRCodeOptions {
     /** Join modules into a single `<path>` element. Default: `false`. */
     join?: boolean
     /**
-     * Shape of the data modules. Finder patterns always stay square so
-     * scanners can lock on reliably. Default: `'square'`.
+     * Shape of the data modules. Functional patterns (finders, timing and
+     * alignment) always stay square so scanners can lock on reliably.
+     * Default: `'square'`.
      * - `'diamond'` — square-on-point (NA style)
      * - `'triangle'` — upward triangle (AA style)
      * - `'circle'` — dots
