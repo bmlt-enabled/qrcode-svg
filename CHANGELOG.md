@@ -5,6 +5,60 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-26
+
+### Security
+
+- **Escape style options in SVG output.** The `color`, `background` and
+  `imageBackground` values are now XML-escaped before being interpolated into
+  attributes, so a consuming app that passes untrusted styling options and
+  inserts the result via `innerHTML` can no longer be injected with extra
+  markup or event handlers.
+
+### Fixed
+
+- **UTF-8 encoding of non-ASCII content.** Emoji, CJK, accented Latin and the
+  code points around the U+0080/U+0800 boundaries now encode to correct UTF-8
+  bytes. Previously they produced invalid bytes, two emoji threw a spurious
+  "code length overflow", and a stray byte-order mark was prepended to any
+  multibyte content.
+- **`typeNumber` is now honored.** An explicit version (`1`–`40`) is used and
+  validated — an out-of-range value throws, and content that does not fit the
+  requested version throws a capacity error. Previously the option was ignored
+  and the version was always chosen automatically.
+- **Diamond and triangle modules now scan reliably.** The timing and alignment
+  patterns stay square along with the finder patterns, so `moduleShape:
+  'diamond'` and `'triangle'` codes decode. Previously these functional
+  patterns were stylized, which broke detection.
+- **Unique ids for predefined shapes.** Each render now uses a distinct
+  `<defs>` id prefix, so multiple inline codes in one document no longer
+  resolve to each other's shape definition. A new `idPrefix` option sets the
+  prefix explicitly for deterministic output.
+- **`svg({})` keeps the wrapper.** Calling `svg()` with an empty options object
+  now produces the same wrapped SVG as calling it with no argument.
+- **Validation of structured input.** Non-finite `width`, `height`, `padding`
+  or `frameFill`, out-of-range or blank `geo` coordinates, a `tel` number with
+  no digits, and an invalid `Date` passed to `event` now throw clear errors
+  instead of emitting `NaN`, `Infinity` or otherwise invalid output.
+
+### Added
+
+- **`idPrefix` option** to set the `<defs>` id prefix used by `predefined`.
+- **Playground improvements** (`examples/`): Copy SVG / Copy content buttons, a
+  low-contrast warning, an aspect-ratio lock, and saveable style presets that
+  capture visual style only — never the content, Wi-Fi password or contact
+  payload. Keyboard and screen-reader support was improved (focusable logo
+  upload, live-region error/status messages, keyboard-operable map results),
+  the library import path now works under project-path GitHub Pages hosting, a
+  failed render no longer leaves the previous code downloadable, and the dev
+  server (`npm run serve`) loads source directly for live reload.
+
+### Notes
+
+- The stricter input validation above throws for inputs that previously
+  produced invalid output, and `typeNumber` now affects the result. Valid usage
+  that already produced correct output is unchanged.
+
 ## [1.1.0] - 2026-10-26
 
 ### Added
@@ -60,5 +114,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `predefined` — emit modules as a reusable `<defs>`/`<use>` shape.
 - `container` output modes: `svg`, `svg-viewbox`, `g`, `none`, `path-data`.
 
+[1.2.0]: https://github.com/bmlt-enabled/qrcode-svg/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/bmlt-enabled/qrcode-svg/releases/tag/v1.1.0
 [1.0.0]: https://github.com/bmlt-enabled/qrcode-svg/releases/tag/v1.0.0

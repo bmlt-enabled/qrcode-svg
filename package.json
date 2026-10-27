@@ -1,6 +1,6 @@
 {
     "name": "@bmlt-enabled/qrcode-svg",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "A simple QR Code generator in pure JavaScript (browser and Node.js, ESM)",
     "author": "bmlt-enabled",
     "license": "MIT",
