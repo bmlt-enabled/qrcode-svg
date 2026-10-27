@@ -29,45 +29,36 @@
 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
+// Helpers
+//---------------------------------------------------------------------
+
+// XML-escape a value before interpolating it into an SVG attribute, so that
+// caller-supplied options (colors, URLs) cannot inject markup or attributes.
+function escapeAttr(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+}
+
+// Per-document counter so predefined-shape definition IDs are unique across
+// every rendered code; two inline SVGs would otherwise share the same IDs and
+// a `use` reference could resolve to the wrong code's definition.
+let qrDefsCounter = 0
+
+//---------------------------------------------------------------------
 // QR8bitByte
 //---------------------------------------------------------------------
 
 function QR8bitByte(data) {
     this.mode = QRMode.MODE_8BIT_BYTE
     this.data = data
-    this.parsedData = []
 
-    // Added to support UTF-8 Characters
-    for (let i = 0, l = this.data.length; i < l; i++) {
-        const byteArray = []
-        const code = this.data.charCodeAt(i)
-
-        if (code > 0x10000) {
-            byteArray[0] = 0xf0 | ((code & 0x1c0000) >>> 18)
-            byteArray[1] = 0x80 | ((code & 0x3f000) >>> 12)
-            byteArray[2] = 0x80 | ((code & 0xfc0) >>> 6)
-            byteArray[3] = 0x80 | (code & 0x3f)
-        } else if (code > 0x800) {
-            byteArray[0] = 0xe0 | ((code & 0xf000) >>> 12)
-            byteArray[1] = 0x80 | ((code & 0xfc0) >>> 6)
-            byteArray[2] = 0x80 | (code & 0x3f)
-        } else if (code > 0x80) {
-            byteArray[0] = 0xc0 | ((code & 0x7c0) >>> 6)
-            byteArray[1] = 0x80 | (code & 0x3f)
-        } else {
-            byteArray[0] = code
-        }
-
-        this.parsedData.push(byteArray)
-    }
-
-    this.parsedData = Array.prototype.concat.apply([], this.parsedData)
-
-    if (this.parsedData.length != this.data.length) {
-        this.parsedData.unshift(191)
-        this.parsedData.unshift(187)
-        this.parsedData.unshift(239)
-    }
+    // Encode the string to UTF-8 once. TextEncoder handles surrogate pairs
+    // (e.g. emoji) and every code point correctly, so the written bytes match
+    // the length used for version selection.
+    this.parsedData = Array.from(new TextEncoder().encode(data))
 }
 
 QR8bitByte.prototype = {
@@ -120,7 +111,7 @@ QRCodeModel.prototype = {
     make: function () {
         // Calculate automatically typeNumber if provided is < 1
         if (this.typeNumber < 1) {
-            let typeNumber = 1
+            let typeNumber
             for (typeNumber = 1; typeNumber < 40; typeNumber++) {
                 const rsBlocks = QRRSBlock.getRSBlocks(
                     typeNumber,
@@ -1243,14 +1234,12 @@ const QRCodeLimitLength = [
 
 /** Constructor */
 function QRCode(options) {
-    const instance = this
-
     //Default options
     this.options = {
         padding: 4,
         width: 256,
         height: 256,
-        typeNumber: 4,
+        typeNumber: 0,
         color: '#000000',
         background: '#ffffff',
         ecl: 'M',
@@ -1279,13 +1268,23 @@ function QRCode(options) {
         throw new Error("Expected 'content' to be non-empty!")
     }
 
-    if (!(this.options.padding >= 0)) {
-        throw new Error("Expected 'padding' value to be non-negative!")
+    if (
+        !Number.isFinite(this.options.padding) ||
+        this.options.padding < 0
+    ) {
+        throw new Error(
+            "Expected 'padding' value to be a finite non-negative number!",
+        )
     }
 
-    if (!(this.options.width > 0) || !(this.options.height > 0)) {
+    if (
+        !Number.isFinite(this.options.width) ||
+        this.options.width <= 0 ||
+        !Number.isFinite(this.options.height) ||
+        this.options.height <= 0
+    ) {
         throw new Error(
-            "Expected 'width' or 'height' value to be higher than zero!",
+            "Expected 'width' and 'height' to be finite values higher than zero!",
         )
     }
 
@@ -1379,13 +1378,26 @@ function QRCode(options) {
 
     //Gets text length
     function _getUTF8Length(content) {
-        const utf8Length = new TextEncoder().encode(content).length
-        return utf8Length + (utf8Length !== content.length ? 3 : 0)
+        return new TextEncoder().encode(content).length
     }
 
     //Generate QR Code matrix
     const content = this.options.content
-    const type = _getTypeNumber(content, this.options.ecl)
+    //Honor an explicit version (1–40); any value < 1 (the default) means
+    //"pick the smallest version that fits the content".
+    const requested = Number(this.options.typeNumber)
+    let type
+    if (Number.isFinite(requested) && requested >= 1) {
+        if (!Number.isInteger(requested) || requested > 40) {
+            throw new Error(
+                'typeNumber must be an integer between 1 and 40, got ' +
+                    this.options.typeNumber,
+            )
+        }
+        type = requested
+    } else {
+        type = _getTypeNumber(content, this.options.ecl)
+    }
     const ecl = _getErrorCorrectLevel(this.options.ecl)
     this.qrcode = new QRCodeModel(type, ecl)
     this.qrcode.addData(content)
@@ -1397,7 +1409,10 @@ QRCode.prototype.svg = function (opt) {
     const options = this.options || {}
     const modules = this.qrcode.modules
 
-    opt ??= { container: options.container || 'svg' }
+    //Resolve the wrapper element: an explicit `opt.container`, else the
+    //instance's configured container, else the default `'svg'`. Handles an
+    //empty `svg({})` (which the SvgOptions type allows) keeping the wrapper.
+    const container = (opt && opt.container) || options.container || 'svg'
 
     //Apply new lines and indents in SVG?
     const pretty = !!(options.pretty ?? true)
@@ -1411,7 +1426,7 @@ QRCode.prototype.svg = function (opt) {
     const ysize = height / (length + 2 * options.padding)
 
     //Join (union, merge) rectangles into one shape?
-    const join = opt.container == 'path-data' || !!options.join
+    const join = container == 'path-data' || !!options.join
 
     //Swap the X and Y modules, pull request #2
     const swap = !!options.swap
@@ -1472,21 +1487,33 @@ QRCode.prototype.svg = function (opt) {
 
     //Populate with predefined shape instead of "rect" elements, thanks to @kkocdko
     const predefined = !!options.predefined
+    //Unique IDs per render so multiple inline codes don't collide; an explicit
+    //idPrefix may be supplied for deterministic output.
+    const idPrefix =
+        options.idPrefix != null
+            ? String(options.idPrefix)
+            : 'qr' + ++qrDefsCounter + '-'
+    const moduleId = idPrefix + 'module'
+    const finderId = idPrefix + 'finder'
     const defs = predefined
         ? indent +
           '<defs>' +
-          '<path id="qrmodule" d="' +
+          '<path id="' +
+          escapeAttr(moduleId) +
+          '" d="' +
           modulePath(0, 0, moduleShape) +
           '" style="fill:' +
-          options.color +
+          escapeAttr(options.color) +
           ';shape-rendering:' +
           rendering +
           ';" />' +
           (stylized
-              ? '<path id="qrfinder" d="' +
+              ? '<path id="' +
+                escapeAttr(finderId) +
+                '" d="' +
                 modulePath(0, 0, 'square') +
                 '" style="fill:' +
-                options.color +
+                escapeAttr(options.color) +
                 ';shape-rendering:crispEdges;" />'
               : '') +
           '</defs>' +
@@ -1501,7 +1528,7 @@ QRCode.prototype.svg = function (opt) {
         '" height="' +
         height +
         '" style="fill:' +
-        options.background +
+        escapeAttr(options.background) +
         ';shape-rendering:crispEdges;"/>' +
         EOL
 
@@ -1561,10 +1588,12 @@ QRCode.prototype.svg = function (opt) {
                         px.toString() +
                         '" y="' +
                         py.toString() +
-                        '" href="' +
-                        (shape === 'square' && stylized
-                            ? '#qrfinder'
-                            : '#qrmodule') +
+                        '" href="#' +
+                        escapeAttr(
+                            shape === 'square' && stylized
+                                ? finderId
+                                : moduleId,
+                        ) +
                         '" />' +
                         EOL
                 } else if (shape === 'square') {
@@ -1580,7 +1609,7 @@ QRCode.prototype.svg = function (opt) {
                         '" height="' +
                         ysize +
                         '" style="fill:' +
-                        options.color +
+                        escapeAttr(options.color) +
                         ';shape-rendering:crispEdges;"/>' +
                         EOL
                 } else {
@@ -1590,7 +1619,7 @@ QRCode.prototype.svg = function (opt) {
                         '<path d="' +
                         modulePath(px, py, shape) +
                         '" style="fill:' +
-                        options.color +
+                        escapeAttr(options.color) +
                         ';shape-rendering:' +
                         rendering +
                         ';"/>' +
@@ -1604,7 +1633,7 @@ QRCode.prototype.svg = function (opt) {
         modrect =
             indent +
             '<path x="0" y="0" style="fill:' +
-            options.color +
+            escapeAttr(options.color) +
             ';shape-rendering:' +
             rendering +
             ';" d="' +
@@ -1618,12 +1647,6 @@ QRCode.prototype.svg = function (opt) {
     let imgmarkup = ''
     if (options.image) {
         const fmt = (n) => (Number.isInteger(n) ? n : Number(n.toFixed(2)))
-        const escapeAttr = (s) =>
-            String(s)
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
 
         const imageSize = options.imageSize ?? 0.2
         const size = Math.min(width, height) * imageSize
@@ -1646,7 +1669,7 @@ QRCode.prototype.svg = function (opt) {
                     '" r="' +
                     fmt(size / 2 + pad) +
                     '" style="fill:' +
-                    imgBg +
+                    escapeAttr(imgBg) +
                     ';"/>' +
                     EOL
             } else {
@@ -1663,7 +1686,7 @@ QRCode.prototype.svg = function (opt) {
                     '" rx="' +
                     fmt(size * 0.12) +
                     '" style="fill:' +
-                    imgBg +
+                    escapeAttr(imgBg) +
                     ';"/>' +
                     EOL
             }
@@ -1736,14 +1759,17 @@ QRCode.prototype.svg = function (opt) {
             ' L0,' +
             fmtN(triH) +
             ' Z" style="fill:' +
-            options.background +
+            escapeAttr(options.background) +
             ';stroke:' +
-            options.color +
+            escapeAttr(options.color) +
             ';stroke-width:' +
             fmtN(sw) +
             ';stroke-linejoin:round;"/>' +
             EOL
-        const fill = Math.min(Math.max(options.frameFill ?? 0.94, 0.3), 1)
+        const frameFill = Number.isFinite(options.frameFill)
+            ? options.frameFill
+            : 0.94
+        const fill = Math.min(Math.max(frameFill, 0.3), 1)
         //Keep the code's base just above the triangle base (clear of the stroke).
         const marginB = sw * 1.5 + height * 0.01
         const yBottom = triH - marginB
@@ -1775,7 +1801,7 @@ QRCode.prototype.svg = function (opt) {
     }
 
     let svg = ''
-    switch (opt.container) {
+    switch (container) {
         //Wrapped in SVG document
         case 'svg':
             if (xmlDeclaration) {
@@ -1889,7 +1915,11 @@ function sanitizePhone(value) {
 QRCode.tel = function (opts) {
     const phone = typeof opts === 'string' ? opts : (opts && opts.phone)
     if (!phone) throw new Error('tel: "phone" is required')
-    return 'tel:' + sanitizePhone(phone)
+    const sanitized = sanitizePhone(phone)
+    if (!/\d/.test(sanitized)) {
+        throw new Error('tel: "phone" must contain at least one digit')
+    }
+    return 'tel:' + sanitized
 }
 
 /**
@@ -1945,10 +1975,23 @@ QRCode.email = function (opts) {
  */
 QRCode.geo = function (opts) {
     opts = opts || {}
+    const isBlank = (v) =>
+        v === undefined ||
+        v === null ||
+        (typeof v === 'string' && v.trim() === '')
+    if (isBlank(opts.latitude) || isBlank(opts.longitude)) {
+        throw new Error('geo: "latitude" and "longitude" are required')
+    }
     const lat = Number(opts.latitude)
     const lng = Number(opts.longitude)
     if (!isFinite(lat) || !isFinite(lng)) {
         throw new Error('geo: numeric "latitude" and "longitude" are required')
+    }
+    if (lat < -90 || lat > 90) {
+        throw new Error('geo: "latitude" must be between -90 and 90')
+    }
+    if (lng < -180 || lng > 180) {
+        throw new Error('geo: "longitude" must be between -180 and 180')
     }
     let out = 'geo:' + lat + ',' + lng
     if (opts.query) out += '?q=' + encodeURIComponent(opts.query)
@@ -2063,6 +2106,9 @@ QRCode.event = function (opts) {
             .replace(/\r?\n/g, '\\n')
     const fmt = (d) => {
         if (!(d instanceof Date)) return String(d)
+        if (isNaN(d.getTime())) {
+            throw new Error('event: "start"/"end" is an invalid Date')
+        }
         const p = (n) => String(n).padStart(2, '0')
         return (
             d.getUTCFullYear() +

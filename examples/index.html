@@ -368,6 +368,26 @@
                 display: flex;
                 gap: 10px;
             }
+            .preset-row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            .preset-row select {
+                flex: 1;
+                min-width: 0;
+            }
+            .lock-aspect {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                color: var(--muted);
+                cursor: pointer;
+            }
+            .lock-aspect input {
+                width: auto;
+            }
             .logo-row .btn {
                 flex: 1;
             }
@@ -379,6 +399,24 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+            }
+            /* Hide the file input visually but keep it keyboard-focusable
+               (unlike [hidden]/display:none), and surface its focus on the
+               styled label. */
+            .logo-upload input[type='file'] {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+            .logo-upload:focus-within {
+                outline: 2px solid var(--primary-500);
+                outline-offset: 2px;
             }
             .btn[disabled] {
                 opacity: 0.5;
@@ -540,6 +578,17 @@
                 border-color: rgba(239, 68, 68, 0.3);
                 color: #fca5a5;
             }
+            /* Non-blocking amber warning (e.g. low contrast). */
+            .alert.warn {
+                background: #fffbeb;
+                color: #92400e;
+                border-color: #fde68a;
+            }
+            .dark .alert.warn {
+                background: rgba(245, 158, 11, 0.12);
+                border-color: rgba(245, 158, 11, 0.3);
+                color: #fcd34d;
+            }
 
             .footer {
                 text-align: center;
@@ -600,10 +649,18 @@
             .geo-results li:last-child {
                 border-bottom: none;
             }
-            .geo-results li:hover {
+            .geo-results li:hover,
+            .geo-results li:focus {
                 background: var(--primary-50);
+                outline: none;
             }
-            .dark .geo-results li:hover {
+            .geo-results li:focus-visible {
+                background: var(--primary-50);
+                outline: 2px solid var(--primary-500);
+                outline-offset: -2px;
+            }
+            .dark .geo-results li:hover,
+            .dark .geo-results li:focus {
                 background: var(--surface-2, rgba(255, 255, 255, 0.06));
             }
             /* Keep Leaflet controls above our chrome */
@@ -622,7 +679,7 @@
                     if (stored === 'dark' || (!stored && prefersDark)) {
                         document.documentElement.classList.add('dark')
                     }
-                } catch (e) {}
+                } catch {}
             })()
         </script>
     </head>
@@ -919,6 +976,8 @@ Hello World!</textarea>
                                 <ul
                                     id="geo-results"
                                     class="geo-results"
+                                    role="listbox"
+                                    aria-label="Location search results"
                                     style="display: none"
                                 ></ul>
                                 <button
@@ -1044,6 +1103,29 @@ Hello World!</textarea>
                             </div>
                         </div>
 
+                        <div class="field">
+                            <label for="preset-select">Style Presets</label>
+                            <div class="preset-row">
+                                <select class="select" id="preset-select">
+                                    <option value="">Custom…</option>
+                                </select>
+                                <button
+                                    class="btn btn-secondary"
+                                    id="preset-save"
+                                    type="button"
+                                >
+                                    Save…
+                                </button>
+                                <button
+                                    class="btn btn-secondary"
+                                    id="preset-reset"
+                                    type="button"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="field">
                                 <label for="color">Foreground</label>
@@ -1123,6 +1205,11 @@ Hello World!</textarea>
                             </div>
                         </div>
 
+                        <label class="lock-aspect">
+                            <input type="checkbox" id="lock-aspect" />
+                            Lock aspect ratio
+                        </label>
+
                         <div class="row">
                             <div class="field">
                                 <label for="frame-shape">Outer Shape</label>
@@ -1200,7 +1287,7 @@ Hello World!</textarea>
                                         id="logo"
                                         type="file"
                                         accept="image/*"
-                                        hidden
+                                        aria-labelledby="logo-label"
                                     />
                                 </label>
                                 <button
@@ -1249,7 +1336,18 @@ Hello World!</textarea>
                             </div>
                         </div>
 
-                        <div class="alert" id="error"></div>
+                        <div
+                            class="alert"
+                            id="error"
+                            role="alert"
+                            aria-live="assertive"
+                        ></div>
+                        <div
+                            class="alert warn"
+                            id="warning"
+                            role="status"
+                            aria-live="polite"
+                        ></div>
                     </div>
 
                     <div class="preview-col">
@@ -1260,7 +1358,12 @@ Hello World!</textarea>
                         <div class="meta-row">
                             <span>Format: <b>SVG</b></span>
                             <span>Container: <b>svg-viewbox</b></span>
-                            <span>Status: <b id="meta-status">Ready</b></span>
+                            <span
+                                >Status:
+                                <b id="meta-status" aria-live="polite" role="status"
+                                    >Ready</b
+                                ></span
+                            >
                         </div>
 
                         <div class="actions">
@@ -1302,6 +1405,20 @@ Hello World!</textarea>
                                 </svg>
                                 Download PNG
                             </button>
+                            <button
+                                class="btn btn-secondary"
+                                id="copy-svg"
+                                type="button"
+                            >
+                                Copy SVG
+                            </button>
+                            <button
+                                class="btn btn-secondary"
+                                id="copy-content"
+                                type="button"
+                            >
+                                Copy Content
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1316,7 +1433,7 @@ Hello World!</textarea>
         </div>
 
         <script type="module">
-            import QRCode from '/dist/qrcode.js'
+            import QRCode from '../dist/qrcode.js'
 
             const fields = {
                 content: document.getElementById('content'),
@@ -1369,6 +1486,11 @@ Hello World!</textarea>
             const statChars = document.getElementById('stat-chars')
             const statBytes = document.getElementById('stat-bytes')
             const metaStatus = document.getElementById('meta-status')
+            const warningEl = document.getElementById('warning')
+            const lockAspect = document.getElementById('lock-aspect')
+            const presetSelect = document.getElementById('preset-select')
+            // Most recent successfully-generated QR payload (for "Copy Content").
+            let lastContent = ''
 
             function syncChrome(content) {
                 chipColor.style.background = fields.color.value
@@ -1509,6 +1631,63 @@ Hello World!</textarea>
                 }
             }
 
+            function setExportsEnabled(enabled) {
+                document.getElementById('download-svg').disabled = !enabled
+                document.getElementById('download-png').disabled = !enabled
+                document.getElementById('copy-svg').disabled = !enabled
+                document.getElementById('copy-content').disabled = !enabled
+            }
+
+            function invalidatePreview() {
+                container.innerHTML = ''
+                lastContent = ''
+                setExportsEnabled(false)
+            }
+
+            function setWarning(msg) {
+                warningEl.textContent = msg || ''
+                warningEl.classList.toggle('show', !!msg)
+            }
+
+            // sRGB relative luminance of a #rrggbb color (WCAG).
+            function luminance(hex) {
+                const m = /^#?([0-9a-f]{6})$/i.exec(hex)
+                if (!m) return null
+                const n = parseInt(m[1], 16)
+                const chan = (c) => {
+                    c /= 255
+                    return c <= 0.03928
+                        ? c / 12.92
+                        : Math.pow((c + 0.055) / 1.055, 2.4)
+                }
+                const r = chan((n >> 16) & 255)
+                const g = chan((n >> 8) & 255)
+                const b = chan(n & 255)
+                return 0.2126 * r + 0.7152 * g + 0.0722 * b
+            }
+
+            // Warn when foreground/background contrast is too low (or inverted)
+            // to scan reliably. Scanners want a dark code on a light background.
+            function checkContrast() {
+                const fg = luminance(fields.color.value)
+                const bg = luminance(fields.background.value)
+                if (fg == null || bg == null) return setWarning('')
+                const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05)
+                if (ratio < 3) {
+                    setWarning(
+                        `Low contrast (${ratio.toFixed(1)}:1) — this code may not scan. ` +
+                            'Use a dark foreground on a light background.',
+                    )
+                } else if (fg > bg) {
+                    setWarning(
+                        'Inverted colors (light foreground on dark background) — ' +
+                            'some scanners will not read this. Consider swapping them.',
+                    )
+                } else {
+                    setWarning('')
+                }
+            }
+
             function render() {
                 // Show only the field block for the selected type. vcard and
                 // mecard share one block, so hide every block then show the
@@ -1523,8 +1702,9 @@ Hello World!</textarea>
 
                 const built = buildContent()
                 syncChrome(built.content || '')
+                checkContrast()
                 if (built.error) {
-                    container.innerHTML = ''
+                    invalidatePreview()
                     setError(built.error)
                     return
                 }
@@ -1550,15 +1730,45 @@ Hello World!</textarea>
                         imageBackgroundShape: logoBg.value,
                     })
                     container.innerHTML = qrcode.svg()
+                    lastContent = content
+                    setExportsEnabled(true)
                     setError(null)
                 } catch (err) {
+                    invalidatePreview()
                     setError(err.message || String(err))
                 }
             }
 
-            for (const el of Object.values(fields)) {
+            // Width/height get dedicated listeners (below) for the aspect lock.
+            for (const [key, el] of Object.entries(fields)) {
+                if (key === 'width' || key === 'height') continue
                 el.addEventListener('input', render)
             }
+
+            // Aspect-ratio lock: keep width and height in proportion. The ratio
+            // is captured when the lock is switched on.
+            let aspectRatio = 1
+            lockAspect.addEventListener('change', () => {
+                if (lockAspect.checked) {
+                    const w = Number(fields.width.value)
+                    const h = Number(fields.height.value)
+                    aspectRatio = w > 0 && h > 0 ? w / h : 1
+                }
+            })
+            fields.width.addEventListener('input', () => {
+                if (lockAspect.checked) {
+                    const w = Number(fields.width.value)
+                    if (w > 0) fields.height.value = Math.round(w / aspectRatio)
+                }
+                render()
+            })
+            fields.height.addEventListener('input', () => {
+                if (lockAspect.checked) {
+                    const h = Number(fields.height.value)
+                    if (h > 0) fields.width.value = Math.round(h * aspectRatio)
+                }
+                render()
+            })
 
             // Wi-Fi inputs plus every structured-type field drive the render.
             const typedInputs = new Set([
@@ -1611,8 +1821,16 @@ Hello World!</textarea>
             function initGeoMap() {
                 if (geoMap || typeof L === 'undefined') return
                 const hasCoords = $('geo-lat').value && $('geo-lng').value
-                const lat = Number($('geo-lat').value) || 20
-                const lng = Number($('geo-lng').value) || 0
+                const parsedLat = Number($('geo-lat').value)
+                const parsedLng = Number($('geo-lng').value)
+                const lat =
+                    $('geo-lat').value && Number.isFinite(parsedLat)
+                        ? parsedLat
+                        : 20
+                const lng =
+                    $('geo-lng').value && Number.isFinite(parsedLng)
+                        ? parsedLng
+                        : 0
                 geoMap = L.map('geo-map').setView(
                     [lat, lng],
                     hasCoords ? 13 : 2,
@@ -1691,7 +1909,11 @@ Hello World!</textarea>
                     for (const place of data) {
                         const li = document.createElement('li')
                         li.textContent = place.display_name
-                        li.addEventListener('click', () => {
+                        // Keyboard-operable like a listbox option, not a
+                        // mouse-only row.
+                        li.setAttribute('role', 'option')
+                        li.tabIndex = 0
+                        const selectPlace = () => {
                             const lat = Number(place.lat)
                             const lng = Number(place.lon)
                             $('geo-lat').value = lat.toFixed(6)
@@ -1707,6 +1929,13 @@ Hello World!</textarea>
                             }
                             list.style.display = 'none'
                             render()
+                        }
+                        li.addEventListener('click', selectPlace)
+                        li.addEventListener('keydown', (ev) => {
+                            if (ev.key === 'Enter' || ev.key === ' ') {
+                                ev.preventDefault()
+                                selectPlace()
+                            }
                         })
                         list.appendChild(li)
                     }
@@ -1866,6 +2095,146 @@ Hello World!</textarea>
                     }
                     img.src = url
                 })
+
+            // --- Copy to clipboard -------------------------------------------
+            async function copyText(text, button, label) {
+                try {
+                    await navigator.clipboard.writeText(text)
+                    const original = button.textContent
+                    button.textContent = 'Copied!'
+                    metaStatus.textContent = `Copied ${label}`
+                    setTimeout(() => {
+                        button.textContent = original
+                        metaStatus.textContent = 'Ready'
+                    }, 1200)
+                } catch {
+                    setError('Clipboard copy was blocked by the browser')
+                }
+            }
+            document.getElementById('copy-svg').addEventListener('click', () => {
+                const markup = currentSvgMarkup()
+                if (markup)
+                    copyText(markup, document.getElementById('copy-svg'), 'SVG')
+            })
+            document
+                .getElementById('copy-content')
+                .addEventListener('click', () => {
+                    if (lastContent)
+                        copyText(
+                            lastContent,
+                            document.getElementById('copy-content'),
+                            'content',
+                        )
+                })
+
+            // --- Style presets ------------------------------------------------
+            // Presets carry only visual STYLE, never the content/Wi-Fi/contact
+            // payload, so saving one never persists a password or personal data.
+            const STYLE_FIELDS = {
+                color: fields.color,
+                background: fields.background,
+                ecl: fields.ecl,
+                padding: fields.padding,
+                moduleShape: fields.moduleShape,
+                frameShape: fields.frameShape,
+                frameFill: frameFill,
+            }
+            const BUILTIN_PRESETS = [
+                { name: 'Classic', style: { color: '#000000', background: '#ffffff', ecl: 'M', padding: '4', moduleShape: 'square', frameShape: 'square', frameFill: '94' } },
+                { name: 'Dots', style: { color: '#000000', background: '#ffffff', ecl: 'H', padding: '4', moduleShape: 'circle', frameShape: 'square', frameFill: '94' } },
+                { name: 'Rounded', style: { color: '#0f172a', background: '#ffffff', ecl: 'H', padding: '4', moduleShape: 'rounded', frameShape: 'square', frameFill: '94' } },
+                { name: 'Ocean', style: { color: '#0052a3', background: '#e6f2ff', ecl: 'M', padding: '4', moduleShape: 'rounded', frameShape: 'square', frameFill: '94' } },
+                { name: 'NA (diamond frame)', style: { color: '#0b4a8b', background: '#ffffff', ecl: 'H', padding: '4', moduleShape: 'square', frameShape: 'diamond', frameFill: '94' } },
+                { name: 'AA (triangle frame)', style: { color: '#1d4ed8', background: '#ffffff', ecl: 'H', padding: '4', moduleShape: 'square', frameShape: 'triangle', frameFill: '94' } },
+            ]
+            const DEFAULT_STYLE = captureCurrentStyle()
+            const PRESET_STORE = 'qrsvg.presets'
+
+            function captureCurrentStyle() {
+                const s = {}
+                for (const k in STYLE_FIELDS) s[k] = STYLE_FIELDS[k].value
+                return s
+            }
+            function applyStyle(style) {
+                for (const k in STYLE_FIELDS) {
+                    if (style[k] != null) STYLE_FIELDS[k].value = style[k]
+                }
+                frameFillVal.textContent = `${frameFill.value}%`
+                render()
+            }
+            function loadSavedPresets() {
+                try {
+                    const raw = localStorage.getItem(PRESET_STORE)
+                    const list = raw ? JSON.parse(raw) : []
+                    return Array.isArray(list) ? list : []
+                } catch {
+                    return []
+                }
+            }
+            function saveSavedPresets(list) {
+                try {
+                    localStorage.setItem(PRESET_STORE, JSON.stringify(list))
+                } catch {
+                    // Storage unavailable (private mode / blocked) — presets
+                    // just won't persist across reloads.
+                }
+            }
+            function populatePresets(selected) {
+                const saved = loadSavedPresets()
+                presetSelect.innerHTML = '<option value="">Custom…</option>'
+                const group = (labelText, items, kind) => {
+                    if (!items.length) return
+                    const og = document.createElement('optgroup')
+                    og.label = labelText
+                    items.forEach((p, i) => {
+                        const opt = document.createElement('option')
+                        opt.value = `${kind}:${i}`
+                        opt.textContent = p.name
+                        og.appendChild(opt)
+                    })
+                    presetSelect.appendChild(og)
+                }
+                group('Built-in', BUILTIN_PRESETS, 'builtin')
+                group('Saved', saved, 'saved')
+                if (selected != null) presetSelect.value = selected
+            }
+            presetSelect.addEventListener('change', () => {
+                const value = presetSelect.value
+                if (!value) return
+                const [kind, i] = value.split(':')
+                const list =
+                    kind === 'builtin' ? BUILTIN_PRESETS : loadSavedPresets()
+                const preset = list[Number(i)]
+                if (preset) applyStyle(preset.style)
+            })
+            document
+                .getElementById('preset-save')
+                .addEventListener('click', () => {
+                    const name = window.prompt('Name this style preset:')
+                    if (!name) return
+                    const saved = loadSavedPresets()
+                    const style = captureCurrentStyle()
+                    const existing = saved.findIndex((p) => p.name === name)
+                    if (existing >= 0) saved[existing] = { name, style }
+                    else saved.push({ name, style })
+                    saveSavedPresets(saved)
+                    const idx = saved.findIndex((p) => p.name === name)
+                    populatePresets(`saved:${idx}`)
+                })
+            document
+                .getElementById('preset-reset')
+                .addEventListener('click', () => {
+                    applyStyle(DEFAULT_STYLE)
+                    presetSelect.value = ''
+                })
+            // Manually tweaking any style field means the output no longer
+            // matches the chosen preset, so drop back to "Custom…".
+            for (const k in STYLE_FIELDS) {
+                STYLE_FIELDS[k].addEventListener('input', () => {
+                    presetSelect.value = ''
+                })
+            }
+            populatePresets()
         </script>
     </body>
 </html>

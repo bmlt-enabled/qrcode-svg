@@ -25,7 +25,7 @@ npm install
 | `npm run format`     | Format the project with Prettier           |
 | `npm run build`      | Build `dist/qrcode.js` via Vite (lib mode) |
 
-Source lives in `src/qrcode.js` (ESM). Tests live in `test/`. The build output is `dist/qrcode.js` and should **not** be committed as part of a PR — CI / `prepublishOnly` will produce it.
+Source lives in `src/qrcode.js` (ESM). Tests live in `test/`. The build output is `dist/qrcode.js` and should **not** be committed as part of a PR — CI and the `prepack` script will produce it.
 
 ## Pull requests
 
@@ -60,7 +60,7 @@ Releases are published to npm under `@bmlt-enabled/qrcode-svg`.
     npm version patch   # or: minor | major
     ```
 
-4. Publish to npm. The `prepublishOnly` script will re-run lint, tests, and the build:
+4. Publish to npm. The `prepublishOnly` script re-runs lint and tests, and `prepack` rebuilds `dist/` into the tarball:
 
     ```bash
     npm publish --access public

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "noEmit": true,
+        "target": "es2022",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "skipLibCheck": true,
+        "types": [],
+        "baseUrl": ".",
+        "paths": {
+            // Resolve the package name through its own package.json "exports"/
+            // "types", exactly as a published consumer would — this validates
+            // both the declarations and that wiring.
+            "@bmlt-enabled/qrcode-svg": ["../../"]
+        }
+    },
+    "include": ["consumer.ts"]
+}

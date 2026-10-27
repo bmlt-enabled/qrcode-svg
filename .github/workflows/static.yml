@@ -15,7 +15,11 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    tests:
+        uses: ./.github/workflows/reusable-test.yml
+
     deploy:
+        needs: [tests]
         environment:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}
@@ -28,14 +32,18 @@ jobs:
               with:
                   node-version: '22'
             - name: Install
-              run: npm install
+              run: npm ci
             - name: Build
               run: npm run build
             - name: Stage site
               run: |
-                  mkdir -p _site
-                  cp -r examples/. _site/
+                  # Mirror the repo layout so the examples' relative
+                  # "../dist/qrcode.js" import resolves under any base path
+                  # (root, project path, or custom domain).
+                  mkdir -p _site/examples
+                  cp -r examples/. _site/examples/
                   cp -r dist _site/dist
+                  printf '<!doctype html><meta http-equiv="refresh" content="0; url=examples/">\n' > _site/index.html
             - name: Setup Pages
               uses: actions/configure-pages@v6
             - name: Upload artifact

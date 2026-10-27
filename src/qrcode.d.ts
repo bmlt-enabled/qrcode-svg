@@ -45,6 +45,12 @@ export interface QRCodeOptions {
     frameFill?: number
     /** Use `<defs>`/`<use>` for module shapes. Default: `false`. */
     predefined?: boolean
+    /**
+     * Prefix for the `<defs>` IDs used when `predefined` is set. Defaults to a
+     * value unique per render so multiple inline codes in one document don't
+     * collide; set it explicitly for deterministic output.
+     */
+    idPrefix?: string
     /** Pretty-print the SVG output. Default: `true`. */
     pretty?: boolean
     /** Swap X and Y (workaround for some readers). Default: `false`. */
@@ -53,7 +59,7 @@ export interface QRCodeOptions {
     xmlDeclaration?: boolean
     /** Wrapper element. Default: `'svg'`. */
     container?: Container
-    /** QR version hint. Default: `4`. */
+    /** QR version (1–40). Determined automatically when unset or `< 1`. */
     typeNumber?: number
     /**
      * Center logo/image to overlay, as a URL or data URI. The image is drawn
